@@ -470,6 +470,16 @@ const DEFAULT_SECTIONS = [
   { id:'sec_chefs',    name:'Шеф-повара',  roles:['Шеф-повар','Повар на экипаж'] }
 ];
 
+// ── VERSION ───────────────────────────────────────────────────
+const APP_VERSION = '1.4';
+(function() {
+  const stored = localStorage.getItem('__app_version');
+  if (stored !== APP_VERSION) {
+    localStorage.clear();
+    localStorage.setItem('__app_version', APP_VERSION);
+  }
+})();
+
 // ── STORAGE ───────────────────────────────────────────────────
 const S = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
