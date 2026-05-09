@@ -427,7 +427,11 @@ async function doRegister(){
   if(role==='Капитан'&&ex.some(a=>a.isCaptain)){err.textContent='Капитан уже зарегистрирован';return;}
   const id='acc_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
   const acc={id,name,role,passHash:hashP(pass),isCaptain:role==='Капитан'};
-  await fbS('/accounts/'+id,acc);CU={...acc};localStorage.setItem('__session',id);await afterLogin();
+  await fbS('/accounts/'+id,acc);
+  CU={...acc};
+  // Store account ID locally — allows multiple devices simultaneously
+  localStorage.setItem('__session',id);
+  await afterLogin();
 }
 async function doLogin(){
   const name=document.getElementById('in-name').value.trim(),pass=document.getElementById('in-pass').value,err=document.getElementById('in-err');err.textContent='';
@@ -436,14 +440,39 @@ async function doLogin(){
   const entry=Object.entries(accs).find(([,a])=>a.name.toLowerCase()===name.toLowerCase());
   if(!entry){err.textContent='Пользователь не найден';return;}
   const [id,acc]=entry;if(acc.passHash!==hashP(pass)){err.textContent='Неверный пароль';return;}
-  CU={...acc,id};localStorage.setItem('__session',id);await afterLogin();
+  // Check if account is locked (forced logout by captain)
+  if(acc.locked){err.textContent='Сессия сброшена. Обратитесь к капитану.';return;}
+  CU={...acc,id};
+  localStorage.setItem('__session',id);
+  await afterLogin();
 }
 async function afterLogin(){
   await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
   initFCM();startSSE();
+  // Listen for forced logout
+  listenForLogout();
 }
 function doLogout(){localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
 function updateBadge(){if(!CU)return;document.getElementById('badge-name').textContent=CU.name.toUpperCase();document.getElementById('badge-name').className='uname '+bClass(CU.role);document.getElementById('badge-role').textContent=CU.role;}
+
+// Listen for forced logout signal in Firebase
+function listenForLogout(){
+  if(!CU?.id)return;
+  if(sseStreams['logout']){try{sseStreams['logout'].close();}catch(e){}}
+  const es=new EventSource(DB+'/accounts/'+CU.id+'/locked.json?accept=text%2Fevent-stream');
+  es.addEventListener('put',e=>{
+    try{
+      const val=JSON.parse(e.data).data;
+      if(val===true){
+        // Session was revoked — log out this device
+        showToast('Сессия сброшена капитаном');
+        setTimeout(()=>doLogout(),1500);
+      }
+    }catch(er){}
+  });
+  es.onerror=()=>{};
+  sseStreams['logout']=es;
+}
 
 // ═══ NOTIFICATIONS ═══════════════════════════════════════════════
 async function initFCM(){
@@ -593,17 +622,53 @@ async function renderDay(area,date){
   tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTask(task,date)));
   const sec=sections.find(s=>s.id===curSec);
   const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
-  if(ce){const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';ab.onclick=()=>addTask(date);area.appendChild(ab);}
+  if(ce){
+    const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
+    ab.onclick=()=>{ab.replaceWith(mkAddForm(date,area));};
+    area.appendChild(ab);
+  }
   else{const rn=mk('div','ro-note');rn.textContent='👁 Только просмотр';area.appendChild(rn);}
 }
 async function addTask(date){
   const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
   const task={id,text:'',done:false,authorName:CU.name,authorRole:isCap()?'captain':'crew',authorRoleLabel:CU.role,authorAccId:CU.id,section:curSec,createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
   await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
-  // Send FCM push to all subscribers (via DB trigger — store notification)
-  await fbS('/notifications/'+Date.now(),{type:'new_task',section:curSec,sectionName:sections.find(s=>s.id===curSec)?.name||curSec,authorName:CU.name,authorRole:CU.role,createdAt:new Date().toISOString(),sentBy:CU.id});
   playSound('add');
-  setTimeout(()=>{const el=document.querySelector(`.ttxt[data-id="${id}"]`);if(el)el.focus();},300);
+  // SSE will re-render — focus will happen after re-render
+}
+
+// Inline add form shown directly in the list (works on iOS)
+function mkAddForm(date,area){
+  const form=mk('div','');
+  form.style.cssText='background:var(--surf2);border:1px solid var(--gold);border-radius:14px;padding:12px 14px;margin-top:4px;display:flex;flex-direction:column;gap:8px;';
+  const inp=document.createElement('textarea');
+  inp.placeholder='Описание задачи...';
+  inp.rows=2;
+  inp.style.cssText='background:none;border:none;outline:none;color:var(--text);font-family:Montserrat,sans-serif;font-size:14px;resize:none;width:100%;line-height:1.5;';
+  const saveRow=mk('div','');saveRow.style.cssText='display:flex;gap:8px;';
+  const saveBtn=mk('button','mbtn');saveBtn.textContent='✓ Сохранить';saveBtn.style.cssText='flex:1;padding:10px;font-size:11px;margin-top:0;';
+  const cancelBtn=mk('button','mbtn neutral');cancelBtn.textContent='Отмена';cancelBtn.style.cssText='flex:1;padding:10px;font-size:11px;margin-top:0;';
+  saveBtn.onclick=async()=>{
+    const text=inp.value.trim();
+    if(!text){inp.focus();return;}
+    const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+    const task={id,text,done:false,authorName:CU.name,authorRole:isCap()?'captain':'crew',authorRoleLabel:CU.role,authorAccId:CU.id,section:curSec,createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
+    await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
+    playSound('add');
+    showToast('✓ Задача добавлена');
+    // Re-render the day content below calendar
+    if(curTab==='calendar'){renderCalendarDay(date);}
+    else{renderC();}
+  };
+  cancelBtn.onclick=()=>{
+    if(curTab==='calendar'){renderCalendarDay(date);}
+    else{renderC();}
+  };
+  saveRow.appendChild(saveBtn);saveRow.appendChild(cancelBtn);
+  form.appendChild(inp);form.appendChild(saveRow);
+  // Auto-focus after append
+  setTimeout(()=>inp.focus(),100);
+  return form;
 }
 
 function mkTask(task,date){
@@ -614,16 +679,38 @@ function mkTask(task,date){
   const sbg=mk('div','tswbg-r');sbg.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbg);
   const cont=mk('div','tcont');
   const row=mk('div','trow');
-  const txt=mk('div','ttxt');txt.contentEditable=editable?'true':'false';txt.dataset.id=task.id;txt.dataset.ph='Опишите задачу...';txt.textContent=task.text||'';
-  const sv=mk('button','save-btn');sv.innerHTML='✓ &nbsp;Сохранить';
+
+  let txt,sv;
+  if(editable){
+    // Use textarea for reliable iOS input
+    txt=document.createElement('textarea');
+    txt.value=task.text||'';
+    txt.placeholder='Опишите задачу...';
+    txt.rows=task.text?Math.max(1,Math.ceil(task.text.length/35)):1;
+    txt.style.cssText='flex:1;background:none;border:none;outline:none;color:var(--text);font-family:Montserrat,sans-serif;font-size:14px;line-height:1.5;resize:none;width:100%;padding:0;';
+    txt.dataset.id=task.id;
+    sv=mk('button','save-btn');sv.innerHTML='✓ &nbsp;Сохранить';
+    txt.addEventListener('input',()=>{sv.classList.add('show');txt.rows=Math.max(1,Math.ceil(txt.value.length/35));});
+    txt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sv.click();}});
+    sv.onclick=async()=>{
+      const text=txt.value.trim();
+      await fbP('/tasks/'+curSec+'/'+date+'/'+task.id,{text});
+      sv.classList.remove('show');txt.blur();
+    };
+  } else {
+    txt=mk('div','ttxt');
+    txt.textContent=task.text||'';
+    txt.style.cursor='default';
+    sv=mk('button','save-btn'); // hidden placeholder
+  }
+
   const dl=mk('button','del-btn');dl.textContent='×';
   if(editable){
-    txt.addEventListener('input',()=>sv.classList.add('show'));
-    txt.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sv.click();}});
-    sv.onclick=async()=>{await fbP('/tasks/'+curSec+'/'+date+'/'+task.id,{text:txt.textContent.trim()});sv.classList.remove('show');txt.blur();};
     dl.onclick=async()=>await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
   }else{dl.style.display='none';}
-  row.appendChild(txt);row.appendChild(dl);cont.appendChild(row);cont.appendChild(sv);
+
+  row.appendChild(txt);row.appendChild(dl);cont.appendChild(row);
+  if(editable)cont.appendChild(sv);
   const meta=mk('div','tmeta');const top=mk('div','mtop');top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));meta.appendChild(top);
   const bot=mk('div','mbot');bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
   cont.appendChild(meta);item.appendChild(cont);
@@ -762,7 +849,11 @@ async function renderDayInline(area,date){
   const dh=mk('div','dh');dh.innerHTML=`<div class="db">${DAYS[d.getDay()]}</div><div class="ds">${d.getDate()} ${MONS[d.getMonth()]} ${d.getFullYear()}</div>`;area.appendChild(dh);
   tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTask(task,date)));
   const sec=sections.find(s=>s.id===curSec);const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
-  if(ce){const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';ab.onclick=()=>addTask(date);area.appendChild(ab);}
+  if(ce){
+    const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
+    ab.onclick=()=>{ab.replaceWith(mkAddForm(date,area));};
+    area.appendChild(ab);
+  }
 }
 
 // ═══ DUTY CALENDAR ═══════════════════════════════════════════════
@@ -967,7 +1058,20 @@ async function chPass(id1,id2,msgId){
   msg.style.color='var(--green)';msg.textContent='Пароль изменён';
   el1.value='';el2.value='';
 }
-async function resetSess(){const msg=$('cmsg');msg.style.color='var(--green)';msg.textContent='Сессии сброшены (функция через Firebase Auth)';}
+async function resetSess(){
+  // Lock all accounts — forces everyone to re-login
+  const accs=await fbG('/accounts')||{};
+  const updates={};
+  Object.keys(accs).forEach(id=>{
+    if(id!==CU.id)updates['/accounts/'+id+'/locked']=true;
+  });
+  // Apply all at once via patch to root
+  if(Object.keys(updates).length>0){
+    await fetch(DB+'/.json',{method:'PATCH',body:JSON.stringify(updates)});
+  }
+  const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Все сессии сброшены';}
+  showToast('✓ Все сессии сброшены');
+}
 
 // ═══ MANAGE SECTIONS ═════════════════════════════════════════════
 function openManSecs(){
