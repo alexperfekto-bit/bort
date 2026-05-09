@@ -688,10 +688,14 @@ async function renderCalendar(area){
   $('cal-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}calSel=null;renderC();};
 }
 async function renderCalendarDay(date){
-  // Remove old day content below secsep
   const area=$('carea');
-  let sep=area.querySelector('.secsep');if(sep){while(sep.nextSibling)sep.nextSibling.remove();}
-  else{const s=mk('div','secsep');area.appendChild(s);sep=s;}
+  // Remove everything after the calendar grid
+  const grid=area.querySelector('.cal-grid');
+  if(grid){
+    let next=grid.nextSibling;
+    while(next){const tmp=next.nextSibling;next.remove();next=tmp;}
+  }
+  const sep=mk('div','secsep');area.appendChild(sep);
   await renderDayInline(area,date);
 }
 async function renderDayInline(area,date){
@@ -710,7 +714,10 @@ async function renderDayInline(area,date){
 async function renderDutyCalendar(area){
   const now=new Date();if(!calY){calY=now.getFullYear();calM=now.getMonth();}
   const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  const sec=sections.find(s=>s.id===curSec);const canAssign=isCap()||canEdit(sec);
+  const sec=sections.find(s=>s.id===curSec);
+  // canAssign: captain always, or user's role is in editRoles (if editRoles empty = nobody except captain)
+  const dutyEditRoles=sec?.editRoles||[];
+  const canAssign=isCap()||(dutyEditRoles.length>0&&dutyEditRoles.includes(CU?.role));
   // Load duty data
   const dutyRaw=await fbG('/duty')||{};
   area.innerHTML='';
@@ -852,17 +859,23 @@ function openSettings(){
     <input class="minp" id="up1" type="password" placeholder="Новый пароль">
     <input class="minp" id="up2" type="password" placeholder="Повторите" style="margin-top:8px">
     <button class="mbtn" onclick="chPass('up1','up2','umsg')">СМЕНИТЬ ПАРОЛЬ</button>
+    <button class="mbtn neutral" onclick="enableNotifs()" style="margin-top:8px">🔔 УВЕДОМЛЕНИЯ</button>
     <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
     <div class="mmsg" id="umsg"></div>`;
   }
   openM('m-settings');
 }
 async function enableNotifs(){
-  if(!('Notification' in window)){showToast('Уведомления не поддерживаются');return;}
-  if(Notification.permission==='granted'){showToast('🔔 Уведомления уже включены');return;}
+  if(!('Notification' in window)){showToast('Браузер не поддерживает уведомления');return;}
+  if(Notification.permission==='granted'){
+    showToast('✅ Уведомления уже включены');return;
+  }
+  if(Notification.permission==='denied'){
+    showToast('⚠️ Уведомления заблокированы — разреши в настройках телефона');return;
+  }
   const perm=await Notification.requestPermission();
-  if(perm==='granted')showToast('🔔 Уведомления включены!');
-  else showToast('Уведомления отклонены — разреши в настройках телефона');
+  if(perm==='granted')showToast('✅ Уведомления включены!');
+  else showToast('⚠️ Разреши уведомления в настройках телефона');
 }
 async function chPass(id1,id2,msgId){
   const p1=$(id1).value,p2=$(id2).value,msg=$(msgId);
