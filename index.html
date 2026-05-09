@@ -126,10 +126,12 @@ select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2)
 .task-meta{display:flex;flex-direction:column;gap:3px;}
 .meta-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .meta-bot{font-size:9px;color:var(--dim);letter-spacing:.4px;}
-.abadge{font-size:9px;font-weight:600;letter-spacing:.8px;padding:2px 8px;border-radius:99px;border:1px solid;white-space:nowrap;}
-.abadge.cap{color:var(--gold);border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.08);}
-.abadge.crew{color:var(--bronze);border-color:rgba(205,127,50,.3);background:rgba(205,127,50,.08);}
-.role-lbl{font-size:9px;color:var(--dim);}
+.abadge{font-size:9px;font-weight:600;letter-spacing:.8px;padding:3px 10px;border-radius:99px;border:1px solid;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.abadge.cap{color:#f5c842;border-color:rgba(245,200,66,.6);background:rgba(245,200,66,.1);}
+.abadge.silver{color:#c8d6e0;border-color:rgba(180,210,230,.7);background:rgba(180,210,230,.1);}
+.abadge.bronze{color:#cd7f32;border-color:rgba(205,127,50,.6);background:rgba(205,127,50,.1);}
+.abadge .badge-sep{width:1px;height:10px;background:currentColor;opacity:.35;}
+.abadge .badge-role{opacity:.75;font-weight:400;}
 .add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--surf2);
   border:1px dashed var(--bord);border-radius:14px;cursor:pointer;color:var(--dim);font-size:13px;
   font-family:'Unbounded',sans-serif;font-weight:300;letter-spacing:1px;transition:all .2s;margin-top:4px;}
@@ -443,12 +445,12 @@ const ALL_ROLES=['Капитан','Старший помощник','Второ�
   'Старший механик','Второй механик','Старшая стюардесса','Стюардесса','Шеф-повар','Повар на экипаж'];
 
 const DEFAULT_SECTIONS=[
-  {id:'sec_starpom',name:'Стар.пом',editRoles:['Старший помощник','Второй помощник'],viewRoles:[]},
-  {id:'sec_matrosy',name:'Матросы',editRoles:['Матрос'],viewRoles:[]},
-  {id:'sec_mech',name:'Механики',editRoles:['Старший механик','Второй механик'],viewRoles:[]},
-  {id:'sec_stew',name:'Стюардессы',editRoles:['Старшая стюардесса','Стюардесса'],viewRoles:[]},
-  {id:'sec_chefs',name:'Шеф-повара',editRoles:['Шеф-повар','Повар на экипаж'],viewRoles:[]},
-  {id:'sec_duty',name:'🔔 Дежурные',editRoles:[],viewRoles:[],isDuty:true}
+  {id:'sec_starpom',name:'Стар.пом',  editRoles:['Старший помощник','Второй помощник'],viewRoles:[],order:1},
+  {id:'sec_mech',   name:'Механики', editRoles:['Старший механик','Второй механик'],  viewRoles:[],order:2},
+  {id:'sec_matrosy',name:'Матросы',  editRoles:['Матрос'],                            viewRoles:[],order:3},
+  {id:'sec_stew',   name:'Стюардессы',editRoles:['Старшая стюардесса','Стюардесса'],  viewRoles:[],order:4},
+  {id:'sec_chefs',  name:'Шеф-повара',editRoles:['Шеф-повар','Повар на экипаж'],      viewRoles:[],order:5},
+  {id:'sec_duty',   name:'🔔 Дежурные',editRoles:[],viewRoles:[],isDuty:true,         order:6}
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -505,8 +507,19 @@ function objToArr(obj){if(!obj)return[];return Object.entries(obj).map(([id,v])=
 async function loadSections(){
   try{
     const raw=await fbGet('/sections');
-    sections=objToArr(raw);
-    if(!sections.length){await fbSet('/sections',arrToObj(DEFAULT_SECTIONS));sections=[...DEFAULT_SECTIONS];}
+    let arr=objToArr(raw);
+    if(!arr.length){await fbSet('/sections',arrToObj(DEFAULT_SECTIONS));arr=[...DEFAULT_SECTIONS];}
+    else{
+      // Ensure all defaults exist and have order
+      let changed=false;
+      DEFAULT_SECTIONS.forEach(def=>{
+        const ex=arr.find(s=>s.id===def.id);
+        if(!ex){arr.push(def);changed=true;}
+        else if(ex.order===undefined){ex.order=def.order;changed=true;}
+      });
+      if(changed)await fbSet('/sections',arrToObj(arr));
+    }
+    sections=arr.sort((a,b)=>(a.order||99)-(b.order||99));
   }catch{sections=[...DEFAULT_SECTIONS];}
 }
 
@@ -577,6 +590,7 @@ async function afterLogin(){
   await loadSections();
   showScreen('screen-main');
   updateBadge();renderSectionsBar();showNoSection();
+  requestNotificationPermission();
   startPolling();
 }
 
@@ -589,6 +603,18 @@ function doLogout(){
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 function isCapUser(){return CU&&CU.isCaptain;}
+const SILVER_ROLES=['Старший помощник','Второй помощник'];
+function getBadgeClass(role){
+  if(role==='Капитан'||role==='captain')return'cap';
+  if(SILVER_ROLES.includes(role))return'silver';
+  return'bronze';
+}
+function mkBadge(name,roleLabel){
+  const sp=document.createElement('span');
+  sp.className='abadge '+getBadgeClass(roleLabel);
+  sp.innerHTML=`<span>${name}</span><span class="badge-sep"></span><span class="badge-role">${roleLabel||''}</span>`;
+  return sp;
+}
 function dStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayStr(){return dStr();}
 function tomorrowStr(){const d=new Date();d.setDate(d.getDate()+1);return dStr(d);}
@@ -632,10 +658,13 @@ function updateBadge(){
 // ═══════════════════════════════════════════════════════════════
 function renderSectionsBar(){
   const bar=document.getElementById('sections-bar');bar.innerHTML='';
-  const cap=document.createElement('div');
-  cap.className='sec-tab'+(currentSection==='captain'?' active':'');
-  cap.dataset.sec='captain';cap.textContent='⚓ Капитан';
-  cap.onclick=()=>setSec('captain');bar.appendChild(cap);
+  // Captain tab — only visible to captain
+  if(isCapUser()){
+    const cap=document.createElement('div');
+    cap.className='sec-tab'+(currentSection==='captain'?' active':'');
+    cap.dataset.sec='captain';cap.textContent='⚓ Капитан';
+    cap.onclick=()=>setSec('captain');bar.appendChild(cap);
+  }
   getVisibleSecs().forEach(sec=>{
     const el=document.createElement('div');
     el.className='sec-tab'+(sec.isDuty?' duty':'')+(currentSection===sec.id?' active':'');
@@ -656,7 +685,7 @@ async function setSec(secId){
   document.getElementById('content-area').style.display='';
   document.getElementById('nav-tabs').style.display='flex';
   setTab(currentTab);
-  subscribeToSection(secId);
+  listenSection(secId);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -713,9 +742,11 @@ async function addTask(date){
   const task={id,text:'',done:false,
     authorName:CU.name,authorRole:isCapUser()?'captain':'crew',authorRoleLabel:CU.role,
     authorAccId:CU.id,section:currentSection,
-    createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null};
+    createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
   await fbSet('/tasks/'+currentSection+'/'+date+'/'+id,task);
-  playSound('add');renderContent();
+  playSound('add');
+  // SSE will trigger re-render; but focus new field immediately
+  renderContent();
   setTimeout(()=>{const el=document.querySelector(`.task-text[data-id="${id}"]`);if(el)el.focus();},200);
 }
 
@@ -745,8 +776,7 @@ function mkTask(task,date){
   row.appendChild(text);row.appendChild(delBtn);content.appendChild(row);content.appendChild(saveBtn);
   const meta=document.createElement('div');meta.className='task-meta';
   const top=document.createElement('div');top.className='meta-top';
-  const ab=document.createElement('span');ab.className='abadge '+(task.authorRole==='captain'?'cap':'crew');ab.textContent=task.authorName;top.appendChild(ab);
-  const rl=document.createElement('span');rl.className='role-lbl';rl.textContent=task.authorRoleLabel||'';top.appendChild(rl);
+  top.appendChild(mkBadge(task.authorName, task.authorRoleLabel||task.authorRole));
   meta.appendChild(top);
   const bot=document.createElement('div');bot.className='meta-bot';bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
   content.appendChild(meta);item.appendChild(content);
@@ -755,8 +785,12 @@ function mkTask(task,date){
 }
 
 async function completeTask(taskId,date){
-  await fbPatch('/tasks/'+currentSection+'/'+date+'/'+taskId,{done:true,completedAt:new Date().toISOString(),completedByAccId:CU?.id});
-  playSound('done');renderContent();showToast('✓ Выполнено');
+  await fbPatch('/tasks/'+currentSection+'/'+date+'/'+taskId,{
+    done:true,completedAt:new Date().toISOString(),
+    completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role
+  });
+  playSound('done');showToast('✓ Выполнено');
+  // No need to re-render — SSE listener will trigger it
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -862,12 +896,12 @@ function mkDoneEl(task,date,isToday){
   const content=document.createElement('div');content.className='done-content';
   const textEl=document.createElement('div');textEl.className='done-text';textEl.textContent=task.text;content.appendChild(textEl);
   const top=document.createElement('div');top.className='done-meta-top';
-  const ab=document.createElement('span');ab.className='abadge '+(task.authorRole==='captain'?'cap':'crew');ab.textContent=task.authorName;top.appendChild(ab);
-  const rl=document.createElement('span');rl.className='role-lbl';rl.textContent=task.authorRoleLabel||'';top.appendChild(rl);
+  top.appendChild(mkBadge(task.authorName, task.authorRoleLabel||task.authorRole));
   if(task.sectionLabel){const sb=document.createElement('span');sb.className='sec-badge';sb.textContent=task.sectionLabel;top.appendChild(sb);}
   content.appendChild(top);
   const bot=document.createElement('div');bot.className='done-meta-bot';
-  bot.textContent=`создано ${fTime(task.createdAt)} · выполнено ${fTime(task.completedAt)}`;
+  const completerName=task.completedByName?` · выполнил: ${task.completedByName}`:'';
+  bot.textContent=`создано ${fTime(task.createdAt)} · выполнено ${fTime(task.completedAt)}${completerName}`;
   if(canRevert){const h=document.createElement('span');h.className='revert-hint';h.textContent=' · ← вернуть';bot.appendChild(h);}
   content.appendChild(bot);item.appendChild(content);
   if(canRevert)setupSwipe(item,content,bg,async()=>{
@@ -878,23 +912,83 @@ function mkDoneEl(task,date,isToday){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REAL-TIME POLLING (Firebase REST SSE-style with setInterval)
+// REAL-TIME via Firebase SSE (EventSource)
 // ═══════════════════════════════════════════════════════════════
-let pollInterval=null;
+let sseConnections={}; // path -> EventSource
+let sseTaskCounts={}; // secId -> count (for notifications)
+
 function startPolling(){
+  // Subscribe to today's tasks for all visible sections (notifications)
   stopAllListeners();
-  pollInterval=setInterval(async()=>{
-    if(!currentSection||currentTab!=='today')return;
-    const raw=await fbGet('/tasks/'+currentSection+'/'+todayStr())||{};
-    const tasks=objToArr(raw).filter(t=>t.text&&t.text.trim()&&!t.done&&t.authorAccId!==CU?.id);
-    const key=currentSection;
-    const prev=prevTaskCounts[key]??-1;
-    if(prev!==-1&&tasks.length>prev){showToast('🔔 Новая задача в разделе');playSound('notify');}
-    prevTaskCounts[key]=tasks.length;
-  },10000);
+  getVisibleSecs().forEach(sec=>listenSection(sec.id));
+  // Also listen to current section if set
+  if(currentSection)listenCurrentSection(currentSection,currentTab);
 }
-function stopAllListeners(){if(pollInterval)clearInterval(pollInterval);}
-function subscribeToSection(secId){prevTaskCounts[secId]=-1;}
+
+function listenSection(secId){
+  // Listen for new tasks today on this section for notifications
+  const today=todayStr();
+  const path='/tasks/'+secId+'/'+today;
+  if(sseConnections['notify_'+secId])sseConnections['notify_'+secId].close();
+  const es=new EventSource(DB_URL+path+'.json?accept=text/event-stream');
+  es.addEventListener('put',e=>{
+    try{
+      const data=JSON.parse(e.data);
+      const tasks=objToArr(data.data||{}).filter(t=>t.text&&t.text.trim()&&t.authorAccId!==CU?.id&&!t.done);
+      const prev=sseTaskCounts[secId]??-1;
+      if(prev!==-1&&tasks.length>prev){
+        const sec=sections.find(s=>s.id===secId);
+        showToast('🔔 Новая задача: '+(sec?.name||secId));
+        playSound('notify');
+        triggerPushNotification('Новая задача в разделе '+(sec?.name||''));
+      }
+      sseTaskCounts[secId]=tasks.length;
+      // If this is the currently viewed section/tab, re-render
+      if(secId===currentSection&&(currentTab==='today')){
+        renderContent();
+      }
+    }catch(err){}
+  });
+  es.addEventListener('patch',e=>{
+    if(secId===currentSection&&(currentTab==='today'||currentTab==='done')){
+      renderContent();
+    }
+  });
+  es.onerror=()=>{es.close();delete sseConnections['notify_'+secId];};
+  sseConnections['notify_'+secId]=es;
+}
+
+function listenCurrentSection(secId,tab){
+  // Already handled by listenSection for today
+  // For done/tomorrow/calendar tabs, just re-render on any change to section
+  if(tab==='done'||tab==='tomorrow'||tab==='calendar'){
+    const path='/tasks/'+secId;
+    if(sseConnections['cur_'+secId])sseConnections['cur_'+secId].close();
+    const es=new EventSource(DB_URL+path+'.json?accept=text/event-stream');
+    es.addEventListener('put',()=>{if(secId===currentSection)renderContent();});
+    es.addEventListener('patch',()=>{if(secId===currentSection)renderContent();});
+    es.onerror=()=>{es.close();delete sseConnections['cur_'+secId];};
+    sseConnections['cur_'+secId]=es;
+  }
+}
+
+function stopAllListeners(){
+  Object.values(sseConnections).forEach(es=>{try{es.close();}catch(e){}});
+  sseConnections={};sseTaskCounts={};
+}
+
+// Push notification (Web Notifications API)
+function triggerPushNotification(msg){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='granted'){new Notification('БОРТ',{body:msg,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">⚓</text></svg>'});}
+  else if(Notification.permission!=='denied'){Notification.requestPermission().then(p=>{if(p==='granted')new Notification('БОРТ',{body:msg});});}
+}
+
+function requestNotificationPermission(){
+  if('Notification' in window&&Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SETTINGS
