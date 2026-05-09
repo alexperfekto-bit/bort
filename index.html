@@ -395,7 +395,18 @@ function hashP(p){let h=0;for(let i=0;i<p.length;i++){h=(Math.imul(31,h)+p.charC
 async function init(){
   showS('sc-splash');
   const sid=localStorage.getItem('__session');
-  if(sid){try{const a=await fbG('/accounts/'+sid);if(a&&a.name){CU={...a,id:sid};await afterLogin();return;}}catch(e){}}
+  if(sid){
+    try{
+      const a=await fbG('/accounts/'+sid);
+      if(a&&a.name){
+        // Clear locked flag on login (session restored = this device is authorized)
+        if(a.locked){await fbP('/accounts/'+sid,{locked:false});}
+        CU={...a,id:sid,locked:false};
+        await afterLogin();
+        return;
+      }
+    }catch(e){}
+  }
   await loadSecs();await buildLoginForm();showS('sc-login');
 }
 
@@ -459,12 +470,13 @@ function updateBadge(){if(!CU)return;document.getElementById('badge-name').textC
 function listenForLogout(){
   if(!CU?.id)return;
   if(sseStreams['logout']){try{sseStreams['logout'].close();}catch(e){}}
-  const es=new EventSource(DB+'/accounts/'+CU.id+'/locked.json?accept=text%2Fevent-stream');
+  const es=new EventSource(DB+'/accounts/'+CU.id+'.json?accept=text%2Fevent-stream');
   es.addEventListener('put',e=>{
     try{
-      const val=JSON.parse(e.data).data;
-      if(val===true){
-        // Session was revoked — log out this device
+      const acc=JSON.parse(e.data).data;
+      if(acc&&acc.locked===true&&!isCap()){
+        // Unlock self immediately then logout
+        fbP('/accounts/'+CU.id,{locked:false});
         showToast('Сессия сброшена капитаном');
         setTimeout(()=>doLogout(),1500);
       }
@@ -1043,11 +1055,26 @@ async function loadSettingsPoints(){
 }
 async function enableNotifs(){
   if(!('Notification' in window)){showToast('Браузер не поддерживает уведомления');return;}
-  if(Notification.permission==='granted'){showToast('✅ Уведомления уже включены');return;}
-  if(Notification.permission==='denied'){showToast('⚠️ Разреши уведомления в настройках телефона → Safari → Уведомления');return;}
+  const p=Notification.permission;
+  if(p==='granted'){
+    // Can't disable programmatically — must use phone settings
+    showToast('Для отключения: Настройки телефона → Safari → Уведомления → БОРТ');
+    const btn=$('notif-btn');
+    if(btn){btn.textContent='🔔 Отключить: Настройки → Safari → Уведомления';}
+    return;
+  }
+  if(p==='denied'){
+    showToast('⚠️ Разреши в Настройки → Safari → Уведомления');
+    return;
+  }
   const perm=await Notification.requestPermission();
-  if(perm==='granted'){showToast('✅ Уведомления включены!');const b=$('notif-btn');if(b)b.textContent='🔔 Уведомления: включены ✓';}
-  else showToast('⚠️ Разреши уведомления в настройках телефона');
+  if(perm==='granted'){
+    showToast('✅ Уведомления включены!');
+    const btn=$('notif-btn');
+    if(btn)btn.textContent='🔔 Уведомления: включены ✓';
+  } else {
+    showToast('⚠️ Разреши в Настройки → Safari → Уведомления');
+  }
 }
 async function chPass(id1,id2,msgId){
   const el1=$(id1),el2=$(id2),msg=$(msgId);
