@@ -6,73 +6,51 @@
 <title>БОРТ — Система задач</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Unbounded:wght@300;400;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0a0c10;--surf:#111318;--surf2:#1a1d25;--bord:#2a2d35;
-  --text:#e8eaf0;--dim:#6b6e7a;--gold:#f5c842;--bronze:#cd7f32;
-  --green:#3ddc84;--red:#ff4757;--blue:#4a9eff;--purple:#a855f7;
-}
+:root{--bg:#0a0c10;--surf:#111318;--surf2:#1a1d25;--bord:#2a2d35;--text:#e8eaf0;--dim:#6b6e7a;--gold:#f5c842;--silver:#c8d8e8;--bronze:#cd7f32;--green:#3ddc84;--red:#ff4757;--blue:#4a9eff;--purple:#a855f7;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:1;transition:transform .35s cubic-bezier(.77,0,.18,1),opacity .3s;}
 .screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none;}
 
 /* SPLASH */
-#screen-splash{justify-content:center;align-items:center;gap:16px;background:var(--bg);}
+#sc-splash{justify-content:center;align-items:center;gap:16px;}
 .splash-logo{font-family:'Bebas Neue',sans-serif;font-size:80px;color:var(--gold);letter-spacing:8px;text-shadow:0 0 40px rgba(245,200,66,.3);}
 .splash-sub{font-size:11px;color:var(--dim);letter-spacing:5px;text-transform:uppercase;}
-.splash-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);animation:dotPulse 1.2s ease-in-out infinite;}
-@keyframes dotPulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--dim);animation:dp 1.2s ease-in-out infinite;}
+@keyframes dp{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
 /* LOGIN */
-#screen-login{justify-content:center;align-items:center;padding:32px 20px;gap:0;
-  background:radial-gradient(ellipse at 50% 80%,rgba(245,200,66,.07) 0%,transparent 70%),var(--bg);}
-.login-logo{font-family:'Bebas Neue',sans-serif;font-size:68px;color:var(--gold);letter-spacing:8px;
-  text-shadow:0 0 40px rgba(245,200,66,.3);line-height:1;margin-bottom:4px;}
-.login-sub{font-size:11px;color:var(--dim);letter-spacing:5px;text-transform:uppercase;margin-bottom:28px;}
-.login-tabs{display:flex;background:var(--surf2);border-radius:12px;padding:4px;gap:4px;width:100%;max-width:360px;margin-bottom:18px;}
+#sc-login{justify-content:center;align-items:center;padding:28px 20px;gap:0;background:radial-gradient(ellipse at 50% 80%,rgba(245,200,66,.07),transparent 70%),var(--bg);}
+.ll{font-family:'Bebas Neue',sans-serif;font-size:66px;color:var(--gold);letter-spacing:8px;text-shadow:0 0 40px rgba(245,200,66,.3);line-height:1;margin-bottom:4px;}
+.ls{font-size:11px;color:var(--dim);letter-spacing:5px;text-transform:uppercase;margin-bottom:24px;}
+.ltabs{display:flex;background:var(--surf2);border-radius:12px;padding:4px;gap:4px;width:100%;max-width:360px;margin-bottom:16px;}
 .ltab{flex:1;padding:10px;border:none;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;background:none;color:var(--dim);}
 .ltab.active{background:var(--surf);color:var(--text);}
-.lform{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;}
-.inp{background:var(--surf2);border:1px solid var(--bord);border-radius:12px;padding:14px 16px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;transition:border .2s;width:100%;}
-.inp:focus{border-color:var(--gold);}
-.inp::placeholder{color:var(--dim);}
-select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 16px center;}
-.btn-gold{background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:14px;
-  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%;}
+.lform{width:100%;max-width:360px;display:flex;flex-direction:column;gap:11px;}
+.inp{background:var(--surf2);border:1px solid var(--bord);border-radius:12px;padding:13px 16px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;transition:border .2s;width:100%;}
+.inp:focus{border-color:var(--gold);}.inp::placeholder{color:var(--dim);}
+select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+.btn-gold{background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:13px;font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%;}
 .btn-gold:active{transform:scale(.97);}
-.form-err{font-size:12px;color:var(--red);text-align:center;min-height:18px;margin-top:2px;}
-.form-hint{font-size:11px;color:var(--dim);text-align:center;line-height:1.5;}
-
-/* CONFIG SCREEN */
-#screen-config{justify-content:center;align-items:center;padding:32px 20px;gap:16px;
-  background:radial-gradient(ellipse at 50% 60%,rgba(245,200,66,.08) 0%,transparent 70%),var(--bg);}
-.cfg-title{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);letter-spacing:4px;text-align:center;}
-.cfg-sub{font-size:12px;color:var(--dim);letter-spacing:1px;text-align:center;line-height:1.6;max-width:320px;}
-.cfg-form{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;}
+.ferr{font-size:12px;color:var(--red);text-align:center;min-height:16px;}
 
 /* MAIN */
-#screen-main{background:var(--bg);}
-.header{padding:50px 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.htitle{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--text);letter-spacing:3px;flex-shrink:0;}
+#sc-main{background:var(--bg);}
+.hdr{padding:48px 16px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.htitle{font-family:'Bebas Neue',sans-serif;font-size:29px;color:var(--text);letter-spacing:3px;flex-shrink:0;}
 .hright{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;}
 .udot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
 .uinfo{display:flex;flex-direction:column;align-items:flex-end;min-width:0;}
 .uname{font-size:10px;font-weight:700;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.uname.cap{color:var(--gold);}
-.uname.crew{color:var(--bronze);}
+.uname.cap{color:var(--gold);}.uname.sil{color:var(--silver);}.uname.bro{color:var(--bronze);}
 .urole{font-size:9px;color:var(--dim);white-space:nowrap;}
 .gear-btn{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;}
 
 /* PROGRESS */
-#cap-prog{padding:0 16px 8px;}
-#crew-prog{padding:0 16px 10px;}
-.prog-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.prog-wrap{padding:0 16px 8px;}
+.prog-lbl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
 .prog-lbl{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
 .prog-pct{font-weight:700;font-size:12px;}
-.prog-pct.gc{color:var(--gold);}
-.prog-pct.bc{color:var(--blue);}
 .prog-row{display:flex;align-items:center;gap:8px;}
 .prog-track{flex:1;height:7px;background:var(--surf2);border-radius:99px;overflow:hidden;}
 .prog-fill{height:100%;border-radius:99px;transition:width .5s cubic-bezier(.77,0,.18,1);}
@@ -83,66 +61,61 @@ select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2)
 .bed-tiny{font-size:20px;flex-shrink:0;line-height:1;}
 
 /* SECTIONS */
-.sections-bar{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;flex-shrink:0;}
-.sections-bar::-webkit-scrollbar{display:none;}
-.sec-tab{flex-shrink:0;padding:7px 14px;background:var(--surf);border:1px solid var(--bord);border-radius:99px;
-  font-size:10px;font-family:'Unbounded',sans-serif;color:var(--dim);cursor:pointer;transition:all .2s;white-space:nowrap;}
-.sec-tab.active{background:var(--surf2);border-color:var(--gold);color:var(--gold);}
-.sec-tab.add-sec{border-style:dashed;}
-.sec-tab.duty{border-color:rgba(168,85,247,.35);color:var(--purple);}
-.sec-tab.duty.active{border-color:var(--purple);}
+.sbar{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;flex-shrink:0;}
+.sbar::-webkit-scrollbar{display:none;}
+.stab{flex-shrink:0;padding:7px 14px;background:var(--surf);border:1px solid var(--bord);border-radius:99px;font-size:10px;font-family:'Unbounded',sans-serif;color:var(--dim);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.stab.active{background:var(--surf2);border-color:var(--gold);color:var(--gold);}
+.stab.duty{border-color:rgba(168,85,247,.35);color:var(--purple);}
+.stab.duty.active{border-color:var(--purple);}
 
 /* NAV */
-.nav-tabs{display:flex;padding:0 16px;gap:6px;margin-bottom:4px;}
-.tab{flex:1;padding:9px 4px;background:var(--surf);border:1px solid var(--bord);border-radius:10px;
-  font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--dim);text-align:center;cursor:pointer;transition:all .2s;text-transform:uppercase;}
-.tab.active{background:var(--gold);color:#0a0c10;border-color:var(--gold);}
+.ntabs{display:flex;padding:0 16px;gap:6px;margin-bottom:4px;}
+.ntab{flex:1;padding:9px 4px;background:var(--surf);border:1px solid var(--bord);border-radius:10px;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--dim);text-align:center;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.ntab.active{background:var(--gold);color:#0a0c10;border-color:var(--gold);}
 
 /* NO SECTION */
-.select-prompt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
-.sp-icon{font-size:40px;opacity:.3;}
-.sp-text{font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+.sp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.sp-i{font-size:40px;opacity:.3;}.sp-t{font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
 
 /* CONTENT */
-.content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 100px;-webkit-overflow-scrolling:touch;}
-.content-area::-webkit-scrollbar{display:none;}
-.date-header{padding:10px 4px 10px;}
-.date-big{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;}
-.date-sub{font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+.carea{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 100px;-webkit-overflow-scrolling:touch;}
+.carea::-webkit-scrollbar{display:none;}
+.dh{padding:10px 4px 10px;}
+.db{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;}
+.ds{font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+
+/* BADGE — name+role in one frame */
+.abadge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:600;letter-spacing:.8px;padding:3px 10px;border-radius:99px;border:1px solid;white-space:nowrap;}
+.abadge.cap{color:#f5c842;border-color:rgba(245,200,66,.7);background:rgba(245,200,66,.1);}
+.abadge.sil{color:#c8d8e8;border-color:rgba(180,210,230,.8);background:rgba(180,210,230,.1);}
+.abadge.bro{color:#cd7f32;border-color:rgba(205,127,50,.7);background:rgba(205,127,50,.1);}
+.abadge .bsep{width:1px;height:10px;background:currentColor;opacity:.3;}
+.abadge .brole{opacity:.7;font-weight:400;}
 
 /* TASK */
-.task-item{position:relative;background:var(--surf);border:1px solid var(--bord);border-radius:14px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;}
-.task-swipe-bg{position:absolute;inset:0;background:linear-gradient(90deg,var(--green),#00ff88);border-radius:14px;opacity:0;display:flex;align-items:center;padding-left:20px;}
-.task-content{position:relative;z-index:1;background:var(--surf);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transform:translateX(0);}
-.task-content.greening{background:color-mix(in srgb,var(--green) var(--gp,0%),var(--surf));}
-.task-row{display:flex;align-items:flex-start;gap:8px;}
-.task-text{flex:1;font-size:14px;line-height:1.5;color:var(--text);word-break:break-word;min-height:20px;}
-.task-text[contenteditable="true"]{outline:none;}
-.task-text[contenteditable="true"]:empty::before{content:attr(data-ph);color:var(--dim);}
-.save-btn{display:none;align-items:center;justify-content:center;gap:6px;background:var(--green);color:#0a0c10;
-  border:none;border-radius:10px;padding:10px 16px;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;cursor:pointer;width:100%;}
+.titem{position:relative;background:var(--surf);border:1px solid var(--bord);border-radius:14px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;}
+.tswbg{position:absolute;inset:0;background:linear-gradient(90deg,var(--green),#00ff88);border-radius:14px;opacity:0;display:flex;align-items:center;padding-left:20px;}
+.tcont{position:relative;z-index:1;background:var(--surf);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transform:translateX(0);}
+.tcont.greening{background:color-mix(in srgb,var(--green) var(--gp,0%),var(--surf));}
+.trow{display:flex;align-items:flex-start;gap:8px;}
+.ttxt{flex:1;font-size:14px;line-height:1.5;color:var(--text);word-break:break-word;min-height:20px;}
+.ttxt[contenteditable="true"]{outline:none;}
+.ttxt[contenteditable="true"]:empty::before{content:attr(data-ph);color:var(--dim);}
+.save-btn{display:none;align-items:center;justify-content:center;gap:6px;background:var(--green);color:#0a0c10;border:none;border-radius:10px;padding:10px 16px;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;cursor:pointer;width:100%;}
 .save-btn.show{display:flex;}
 .del-btn{background:none;border:none;color:var(--dim);font-size:18px;padding:2px 4px;cursor:pointer;opacity:.4;flex-shrink:0;line-height:1;}
-.task-meta{display:flex;flex-direction:column;gap:3px;}
-.meta-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.meta-bot{font-size:9px;color:var(--dim);letter-spacing:.4px;}
-.abadge{font-size:9px;font-weight:600;letter-spacing:.8px;padding:3px 10px;border-radius:99px;border:1px solid;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
-.abadge.cap{color:#f5c842;border-color:rgba(245,200,66,.6);background:rgba(245,200,66,.1);}
-.abadge.silver{color:#c8d6e0;border-color:rgba(180,210,230,.7);background:rgba(180,210,230,.1);}
-.abadge.bronze{color:#cd7f32;border-color:rgba(205,127,50,.6);background:rgba(205,127,50,.1);}
-.abadge .badge-sep{width:1px;height:10px;background:currentColor;opacity:.35;}
-.abadge .badge-role{opacity:.75;font-weight:400;}
-.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--surf2);
-  border:1px dashed var(--bord);border-radius:14px;cursor:pointer;color:var(--dim);font-size:13px;
-  font-family:'Unbounded',sans-serif;font-weight:300;letter-spacing:1px;transition:all .2s;margin-top:4px;}
+.tmeta{display:flex;flex-direction:column;gap:3px;}
+.mtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.mbot{font-size:9px;color:var(--dim);letter-spacing:.4px;}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--surf2);border:1px dashed var(--bord);border-radius:14px;cursor:pointer;color:var(--dim);font-size:13px;font-family:'Unbounded',sans-serif;font-weight:300;letter-spacing:1px;transition:all .2s;margin-top:4px;}
 .add-btn:active{background:var(--surf);border-color:var(--gold);color:var(--gold);}
-.ro-note{text-align:center;padding:16px 8px;font-size:11px;color:var(--dim);}
+.ro-note{text-align:center;padding:14px 8px;font-size:11px;color:var(--dim);}
 
 /* CALENDAR */
-.calendar-wrap{padding:8px 0;}
-.cal-header{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:12px;}
-.cal-month{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
-.cal-nav{background:none;border:none;color:var(--text);font-size:20px;padding:8px;cursor:pointer;}
+.cal-wrap{padding:6px 0;}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:12px;}
+.cal-mon{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
+.cal-nav{background:none;border:none;color:var(--text);font-size:22px;padding:8px;cursor:pointer;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .cal-dn{text-align:center;font-size:9px;color:var(--dim);padding:4px 0;font-weight:600;letter-spacing:1px;}
 .cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;position:relative;}
@@ -150,50 +123,68 @@ select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2)
 .cal-day.today{background:var(--gold);color:#0a0c10;font-weight:700;}
 .cal-day.has-tasks::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--blue);}
 .cal-day.today.has-tasks::after{background:#0a0c10;}
-.cal-day:active:not(:empty){background:var(--surf2);}
 .cal-day.sel:not(.today){background:var(--surf2);border:1px solid var(--gold);color:var(--gold);}
-.sec-sep{height:1px;background:var(--bord);margin:4px 0 12px;}
+.cal-day.has-duty::after{background:var(--purple)!important;}
+.secsep{height:1px;background:var(--bord);margin:6px 0 12px;}
+
+/* DUTY CALENDAR */
+.duty-day-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--bord);}
+.duty-date-lbl{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;min-width:48px;}
+.duty-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:600;border:1px solid;flex:1;}
+.duty-badge.cap{color:#f5c842;border-color:rgba(245,200,66,.5);}
+.duty-badge.sil{color:#c8d8e8;border-color:rgba(180,210,230,.5);}
+.duty-badge.bro{color:#cd7f32;border-color:rgba(205,127,50,.5);}
+.duty-empty{color:var(--dim);font-size:11px;opacity:.5;}
+.duty-assign-btn{padding:7px 14px;background:var(--surf2);border:1px dashed var(--bord);border-radius:99px;font-size:10px;font-family:'Unbounded',sans-serif;color:var(--dim);cursor:pointer;white-space:nowrap;}
+.duty-assign-btn:active{border-color:var(--purple);color:var(--purple);}
+/* Duty tooltip popup */
+.duty-tooltip{position:fixed;left:50%;transform:translateX(-50%);background:var(--surf2);border:1px solid var(--bord);border-radius:14px;padding:12px 20px;z-index:500;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;animation:dtAnim .3s ease;}
+@keyframes dtAnim{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+.duty-tooltip .dt-name{font-size:14px;font-weight:600;}
+.duty-tooltip .dt-role{font-size:11px;color:var(--dim);}
 
 /* DONE */
-.done-date-sep{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:16px 4px 8px;border-bottom:1px solid var(--bord);margin-bottom:8px;font-family:'Unbounded',sans-serif;font-weight:300;}
+.done-sep{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:14px 4px 8px;border-bottom:1px solid var(--bord);margin-bottom:8px;font-family:'Unbounded',sans-serif;font-weight:300;}
 .done-item{position:relative;background:#13161c;border:1px solid #1c1f26;border-radius:14px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;}
-.done-swipe-bg{position:absolute;inset:0;background:linear-gradient(90deg,#253525,#345034);border-radius:14px;display:flex;align-items:center;padding-left:20px;}
-.done-content{position:relative;z-index:1;background:#13161c;border-radius:14px;padding:12px 14px;transform:translateX(0);display:flex;flex-direction:column;gap:8px;}
-.done-text{font-size:14px;color:var(--dim);text-decoration:line-through;line-height:1.4;word-break:break-word;}
-.done-meta-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.done-meta-bot{font-size:9px;color:#383b44;letter-spacing:.4px;}
+.done-swbg{position:absolute;inset:0;background:linear-gradient(90deg,#253525,#345034);border-radius:14px;display:flex;align-items:center;padding-left:20px;}
+.done-cont{position:relative;z-index:1;background:#13161c;border-radius:14px;padding:12px 14px;transform:translateX(0);display:flex;flex-direction:column;gap:7px;}
+.done-txt{font-size:14px;color:var(--dim);text-decoration:line-through;line-height:1.4;word-break:break-word;}
+.done-mtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.done-mbot{font-size:9px;color:#383b44;letter-spacing:.4px;}
 .sec-badge{font-size:9px;color:var(--dim);border:1px solid #2a2d35;border-radius:99px;padding:1px 8px;white-space:nowrap;}
 .revert-hint{color:#4a7a4a;}
 
 /* MODALS */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s;}
-.modal-overlay.open{opacity:1;pointer-events:all;}
-.modal-sheet{background:var(--surf);border-radius:24px 24px 0 0;padding:24px 20px 44px;width:100%;
-  transform:translateY(100%);transition:transform .35s cubic-bezier(.77,0,.18,1);max-height:88vh;overflow-y:auto;}
-.modal-overlay.open .modal-sheet{transform:translateY(0);}
-.modal-handle{width:40px;height:4px;background:var(--bord);border-radius:99px;margin:0 auto 20px;}
-.modal-title{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;}
-.modal-sub{font-size:11px;color:var(--dim);margin-bottom:10px;letter-spacing:.5px;}
-.modal-inp{width:100%;background:var(--bg);border:1px solid var(--bord);border-radius:12px;padding:14px 16px;
-  color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;margin-bottom:10px;}
-.modal-inp:focus{border-color:var(--gold);}
-select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--bg);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 16px center;}
-.mbtn{width:100%;background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:14px;
-  font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-top:4px;}
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s;}
+.moverlay.open{opacity:1;pointer-events:all;}
+.msheet{background:var(--surf);border-radius:24px 24px 0 0;padding:22px 20px 44px;width:100%;transform:translateY(100%);transition:transform .35s cubic-bezier(.77,0,.18,1);max-height:88vh;overflow-y:auto;}
+.moverlay.open .msheet{transform:translateY(0);}
+.mhandle{width:40px;height:4px;background:var(--bord);border-radius:99px;margin:0 auto 18px;}
+.mtitle{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;}
+.msub{font-size:11px;color:var(--dim);margin-bottom:9px;letter-spacing:.5px;}
+.minp{width:100%;background:var(--bg);border:1px solid var(--bord);border-radius:12px;padding:13px 16px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;margin-bottom:9px;}
+.minp:focus{border-color:var(--gold);}
+select.minp{-webkit-appearance:none;appearance:none;background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+.mbtn{width:100%;background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:13px;font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-top:4px;}
 .mbtn.danger{background:var(--surf2);color:var(--red);border:1px solid var(--red);}
 .mbtn.neutral{background:var(--surf2);color:var(--text);border:1px solid var(--bord);}
-.modal-msg{font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
-.access-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
-.access-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--bord);border-radius:10px;cursor:pointer;}
-.access-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
-.access-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
-.sec-manage-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border:1px solid var(--bord);border-radius:12px;margin-bottom:8px;}
-.smi-name{font-size:13px;font-weight:600;}
-.smi-actions{display:flex;gap:8px;}
-.smi-btn{background:none;border:1px solid var(--bord);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--dim);cursor:pointer;font-family:'Unbounded',sans-serif;}
-.smi-btn.del{color:var(--red);border-color:rgba(255,71,87,.3);}
+.mmsg{font-size:12px;text-align:center;margin-top:8px;min-height:16px;}
+.alist{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.aitem{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--bord);border-radius:10px;cursor:pointer;}
+.aitem input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.aitem label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
+.smi{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border:1px solid var(--bord);border-radius:12px;margin-bottom:8px;}
+.smin{font-size:13px;font-weight:600;}
+.smia{display:flex;gap:8px;}
+.smib{background:none;border:1px solid var(--bord);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--dim);cursor:pointer;font-family:'Unbounded',sans-serif;}
+.smib.del{color:var(--red);border-color:rgba(255,71,87,.3);}
+
+/* ASSIGN MODAL LIST */
+.assign-person{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border:1px solid var(--bord);border-radius:12px;margin-bottom:8px;cursor:pointer;}
+.assign-person:active{border-color:var(--gold);}
+.ap-info{display:flex;flex-direction:column;gap:2px;}
+.ap-name{font-size:13px;font-weight:600;}
+.ap-role{font-size:10px;color:var(--dim);}
 
 /* VICTORY */
 #victory-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;overflow:hidden;}
@@ -201,85 +192,63 @@ select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--
 .v-scene{position:relative;width:200px;height:280px;display:flex;align-items:flex-end;justify-content:center;}
 .v-hsvg{width:180px;height:260px;}
 .v-smoke{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:170px;pointer-events:none;}
-.smoke-b{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(215,215,215,.5),rgba(160,160,160,.1) 55%,transparent 75%);animation:brise 4s ease-out infinite;}
-.smoke-b:nth-child(1){width:32px;height:32px;left:24px;animation-delay:0s;}
-.smoke-b:nth-child(2){width:48px;height:48px;left:14px;animation-delay:1s;}
-.smoke-b:nth-child(3){width:38px;height:38px;left:36px;animation-delay:2s;}
-.smoke-b:nth-child(4){width:26px;height:26px;left:50px;animation-delay:3s;}
+.smkb{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(215,215,215,.5),rgba(160,160,160,.1) 55%,transparent 75%);animation:brise 4s ease-out infinite;}
+.smkb:nth-child(1){width:32px;height:32px;left:24px;animation-delay:0s;}
+.smkb:nth-child(2){width:48px;height:48px;left:14px;animation-delay:1s;}
+.smkb:nth-child(3){width:38px;height:38px;left:36px;animation-delay:2s;}
+.smkb:nth-child(4){width:26px;height:26px;left:50px;animation-delay:3s;}
 @keyframes brise{0%{bottom:0;opacity:0;transform:scale(.3);}10%{opacity:.65;}70%{opacity:.2;}100%{bottom:165px;opacity:0;transform:scale(3) translateX(8px);}}
 .v-text{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:3px;text-align:center;margin-top:12px;line-height:1.35;padding:0 20px;}
 .v-close{margin-top:20px;background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.3);border-radius:99px;padding:10px 28px;font-family:'Unbounded',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;}
 #crew-victory{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;}
 #crew-victory.show{opacity:1;pointer-events:all;}
-.cv-bed{font-size:96px;animation:bbed 1.5s ease-in-out infinite;}
+.cvbed{font-size:96px;animation:bbed 1.5s ease-in-out infinite;}
 @keyframes bbed{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.cv-text{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);letter-spacing:3px;text-align:center;margin-top:14px;line-height:1.3;padding:0 24px;}
+.cvtxt{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);letter-spacing:3px;text-align:center;margin-top:14px;line-height:1.3;padding:0 24px;}
 
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surf2);
-  border:1px solid var(--bord);border-radius:99px;padding:10px 20px;font-size:12px;color:var(--text);
-  opacity:0;transition:all .3s;z-index:200;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surf2);border:1px solid var(--bord);border-radius:99px;padding:10px 20px;font-size:12px;color:var(--text);opacity:0;transition:all .3s;z-index:300;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.empty-state{text-align:center;padding:40px 24px;color:var(--dim);}
-.empty-state .ei{font-size:44px;margin-bottom:14px;opacity:.4;}
-.empty-state p{font-size:13px;line-height:1.6;}
+.empty-st{text-align:center;padding:36px 24px;color:var(--dim);}
+.empty-st .ei{font-size:42px;margin-bottom:12px;opacity:.4;}
+.empty-st p{font-size:13px;line-height:1.6;}
 </style>
 </head>
 <body>
 
 <!-- SPLASH -->
-<div class="screen" id="screen-splash">
+<div class="screen" id="sc-splash">
   <div class="splash-logo">БОРТ</div>
   <div class="splash-sub">Загрузка...</div>
-  <div class="splash-dot" style="margin-top:8px"></div>
-</div>
-
-<!-- CONFIG (first-time Firebase setup) -->
-<div class="screen hidden" id="screen-config">
-  <div class="cfg-title">⚙️ НАСТРОЙКА</div>
-  <div class="cfg-sub">Для работы сайта нужна Firebase база данных.<br>Это бесплатно и займёт 3 минуты.</div>
-  <div class="cfg-form">
-    <div style="font-size:11px;color:var(--dim);line-height:1.7;background:var(--surf2);border-radius:12px;padding:14px 16px;">
-      1. Зайди на <b style="color:var(--gold)">console.firebase.google.com</b><br>
-      2. Создай проект → Realtime Database → Create<br>
-      3. Выбери <b style="color:var(--gold)">Start in test mode</b><br>
-      4. Скопируй URL базы (вида <i>https://xxx.firebaseio.com</i>)<br>
-      5. Вставь ниже и нажми СОХРАНИТЬ
-    </div>
-    <input class="inp" id="cfg-url" placeholder="https://your-project.firebaseio.com" autocomplete="off">
-    <button class="btn-gold" onclick="saveConfig()">СОХРАНИТЬ И НАЧАТЬ</button>
-    <div class="form-err" id="cfg-err"></div>
-  </div>
+  <div class="sdot" style="margin-top:8px"></div>
 </div>
 
 <!-- LOGIN -->
-<div class="screen hidden" id="screen-login">
-  <div class="login-logo">БОРТ</div>
-  <div class="login-sub">Система управления задачами</div>
-  <div class="login-tabs">
+<div class="screen hidden" id="sc-login">
+  <div class="ll">БОРТ</div>
+  <div class="ls">Система управления задачами</div>
+  <div class="ltabs">
     <button class="ltab active" id="ltab-reg" onclick="switchTab('reg')">РЕГИСТРАЦИЯ</button>
     <button class="ltab" id="ltab-in" onclick="switchTab('in')">ВХОД</button>
   </div>
-  <!-- REGISTER -->
-  <div class="lform" id="lform-reg">
+  <div class="lform" id="lf-reg">
     <input class="inp" id="reg-name" placeholder="Ваше имя" autocomplete="off">
     <select class="inp" id="reg-role"><option value="" disabled selected>Должность</option></select>
     <input class="inp" id="reg-pass" type="password" placeholder="Придумайте пароль">
     <input class="inp" id="reg-pass2" type="password" placeholder="Повторите пароль">
     <button class="btn-gold" onclick="doRegister()">ЗАРЕГИСТРИРОВАТЬСЯ</button>
-    <div class="form-err" id="reg-err"></div>
+    <div class="ferr" id="reg-err"></div>
   </div>
-  <!-- LOGIN -->
-  <div class="lform" id="lform-in" style="display:none">
+  <div class="lform" id="lf-in" style="display:none;flex-direction:column">
     <input class="inp" id="in-name" placeholder="Ваше имя" autocomplete="off">
     <input class="inp" id="in-pass" type="password" placeholder="Пароль">
     <button class="btn-gold" onclick="doLogin()">ВОЙТИ</button>
-    <div class="form-err" id="in-err"></div>
+    <div class="ferr" id="in-err"></div>
   </div>
 </div>
 
 <!-- MAIN -->
-<div class="screen hidden" id="screen-main">
-  <div class="header">
+<div class="screen hidden" id="sc-main">
+  <div class="hdr">
     <div class="htitle" id="main-title">БОРТ</div>
     <div class="hright">
       <div class="udot"></div>
@@ -290,17 +259,17 @@ select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--
       <button class="gear-btn" onclick="openSettings()">⚙️</button>
     </div>
   </div>
-  <div id="cap-prog" style="display:none;padding:0 16px 8px">
-    <div class="prog-label"><span class="prog-lbl">ВЫПОЛНЕНО СЕГОДНЯ</span><span class="prog-pct gc" id="cap-pct">0%</span></div>
+  <!-- Captain progress -->
+  <div id="cap-prog" style="display:none" class="prog-wrap">
+    <div class="prog-lbl-row"><span class="prog-lbl">ВЫПОЛНЕНО СЕГОДНЯ</span><span class="prog-pct" id="cap-pct" style="color:var(--gold)">0%</span></div>
     <div class="prog-row">
       <div class="prog-track"><div class="prog-fill gc" id="cap-fill" style="width:0%"></div></div>
       <div class="hookah-tiny"><svg viewBox="0 0 38 52" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="19" cy="48" rx="16" ry="3.5" fill="#4a2e14" stroke="#3a2010" stroke-width=".7"/>
         <ellipse cx="19" cy="46" rx="16" ry="3" fill="#5c3a1a"/>
         <path d="M9 46 Q7 38 9 30 Q11 23 19 21 Q27 23 29 30 Q31 38 29 46 Z" fill="rgba(130,180,210,.18)" stroke="rgba(180,220,240,.4)" stroke-width="1"/>
-        <path d="M11 44 Q9 36 11 29 Q13 24 17 22" stroke="rgba(220,240,255,.25)" stroke-width=".7" fill="none" stroke-linecap="round"/>
         <ellipse cx="19" cy="21" rx="7" ry="2.5" fill="#222" stroke="#555" stroke-width=".7"/>
-        <rect x="17.2" y="8" width="3.6" height="14" rx="1.5" fill="#555" stroke="#444" stroke-width=".4"/>
+        <rect x="17.2" y="8" width="3.6" height="14" rx="1.5" fill="#555"/>
         <ellipse cx="19" cy="10" rx="9" ry="2" fill="#1e1e1e" stroke="#555" stroke-width=".6"/>
         <path d="M13 9 Q13 3.5 19 3 Q25 3.5 25 9 Z" fill="#c8a882" stroke="#b09070" stroke-width=".6"/>
         <ellipse cx="19" cy="9" rx="6" ry="2" fill="#b09070"/>
@@ -311,66 +280,69 @@ select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--
       </svg></div>
     </div>
   </div>
-  <div id="crew-prog" style="display:none;padding:0 16px 10px">
-    <div class="prog-label"><span class="prog-lbl">ВЫПОЛНЕНО СЕГОДНЯ</span><span class="prog-pct bc" id="crew-pct">0%</span></div>
+  <!-- Crew progress -->
+  <div id="crew-prog" style="display:none" class="prog-wrap">
+    <div class="prog-lbl-row"><span class="prog-lbl">ВЫПОЛНЕНО СЕГОДНЯ</span><span class="prog-pct" id="crew-pct" style="color:var(--blue)">0%</span></div>
     <div class="prog-row">
       <div class="prog-track"><div class="prog-fill bc" id="crew-fill" style="width:0%"></div></div>
       <div class="bed-tiny">🛏️</div>
     </div>
   </div>
-  <div class="sections-bar" id="sections-bar"></div>
-  <div class="nav-tabs" id="nav-tabs" style="display:none">
-    <div class="tab active" data-tab="today">Сегодня</div>
-    <div class="tab" data-tab="tomorrow">Завтра</div>
-    <div class="tab" data-tab="calendar">Календарь</div>
-    <div class="tab" data-tab="done">Выполнено</div>
+  <div class="sbar" id="sbar"></div>
+  <div class="ntabs" id="ntabs" style="display:none">
+    <div class="ntab active" data-tab="today">Сегодня</div>
+    <div class="ntab" data-tab="tomorrow">Завтра</div>
+    <div class="ntab" data-tab="calendar">Календарь</div>
+    <div class="ntab" data-tab="done">Выполнено</div>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-    <div class="select-prompt" id="select-prompt"><div class="sp-icon">⚓</div><div class="sp-text">Выберите раздел</div></div>
-    <div class="content-area" id="content-area" style="display:none"></div>
+    <div class="sp" id="sp"><div class="sp-i">⚓</div><div class="sp-t">Выберите раздел</div></div>
+    <div class="carea" id="carea" style="display:none"></div>
   </div>
 </div>
 
-<!-- MODALS -->
-<div class="modal-overlay" id="modal-settings">
-  <div class="modal-sheet"><div class="modal-handle"></div><div id="settings-body"></div></div>
-</div>
-<div class="modal-overlay" id="modal-new-sec">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Новый раздел</div>
-    <input class="modal-inp" id="ns-name" placeholder="Название">
-    <div class="modal-sub">Кто может редактировать:</div>
-    <div class="access-list" id="ns-edit"></div>
-    <div class="modal-sub">Кто видит раздел (пусто = все из editRoles):</div>
-    <div class="access-list" id="ns-view"></div>
+<!-- MODAL: Settings -->
+<div class="moverlay" id="m-settings"><div class="msheet"><div class="mhandle"></div><div id="settings-body"></div></div></div>
+<!-- MODAL: New Section -->
+<div class="moverlay" id="m-newsec">
+  <div class="msheet">
+    <div class="mhandle"></div><div class="mtitle">Новый раздел</div>
+    <input class="minp" id="ns-name" placeholder="Название">
+    <div class="msub">Кто редактирует:</div><div class="alist" id="ns-edit"></div>
+    <div class="msub">Кто видит (пусто = только редакторы):</div><div class="alist" id="ns-view"></div>
     <button class="mbtn" onclick="submitNewSec()">СОЗДАТЬ</button>
   </div>
 </div>
-<div class="modal-overlay" id="modal-edit-sec">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="es-title">Настройка раздела</div>
-    <div class="modal-sub">Кто может редактировать:</div>
-    <div class="access-list" id="es-edit"></div>
-    <div class="modal-sub">Кто видит раздел:</div>
-    <div class="access-list" id="es-view"></div>
+<!-- MODAL: Edit Section -->
+<div class="moverlay" id="m-editsec">
+  <div class="msheet">
+    <div class="mhandle"></div><div class="mtitle" id="es-title">Настройка</div>
+    <div class="msub">Кто редактирует:</div><div class="alist" id="es-edit"></div>
+    <div class="msub">Кто видит:</div><div class="alist" id="es-view"></div>
     <button class="mbtn" onclick="submitEditSec()">СОХРАНИТЬ</button>
   </div>
 </div>
-<div class="modal-overlay" id="modal-manage-secs">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Управление разделами</div>
-    <div id="manage-list"></div>
-    <button class="mbtn" style="margin-top:8px" onclick="closeModal('modal-manage-secs');buildNewSecForm();openModal('modal-new-sec')">+ НОВЫЙ РАЗДЕЛ</button>
+<!-- MODAL: Manage Sections -->
+<div class="moverlay" id="m-mansecs">
+  <div class="msheet">
+    <div class="mhandle"></div><div class="mtitle">Управление разделами</div>
+    <div id="man-list"></div>
+    <button class="mbtn" style="margin-top:8px" onclick="closeM('m-mansecs');buildNewSecForm();openM('m-newsec')">+ НОВЫЙ РАЗДЕЛ</button>
+  </div>
+</div>
+<!-- MODAL: Assign Duty -->
+<div class="moverlay" id="m-assign">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="assign-title">Назначить дежурного</div>
+    <div id="assign-list"></div>
   </div>
 </div>
 
 <!-- VICTORY -->
 <div id="victory-overlay">
   <div class="v-scene">
-    <div class="v-smoke"><div class="smoke-b"></div><div class="smoke-b"></div><div class="smoke-b"></div><div class="smoke-b"></div></div>
+    <div class="v-smoke"><div class="smkb"></div><div class="smkb"></div><div class="smkb"></div><div class="smkb"></div></div>
     <svg class="v-hsvg" viewBox="0 0 110 155" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="55" cy="144" rx="42" ry="8" fill="#4a2e14" stroke="#3a2010" stroke-width="1"/>
       <ellipse cx="55" cy="141" rx="42" ry="7.5" fill="#5c3a1a"/>
@@ -378,7 +350,7 @@ select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--
       <path d="M28 134 Q24 115 29 94 Q34 75 55 69 Q76 75 81 94 Q86 115 82 134 Z" fill="rgba(130,180,210,.16)" stroke="rgba(180,220,240,.38)" stroke-width="1.2"/>
       <path d="M33 130 Q29 111 34 91 Q38 78 49 72" stroke="rgba(220,240,255,.28)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
       <ellipse cx="55" cy="69" rx="10" ry="3.5" fill="#222" stroke="#555" stroke-width="1"/>
-      <rect x="52" y="23" width="6" height="47" rx="2.5" fill="url(#mg2)" stroke="#444" stroke-width=".7"/>
+      <rect x="52" y="23" width="6" height="47" rx="2.5" fill="url(#mg)" stroke="#444" stroke-width=".7"/>
       <ellipse cx="55" cy="26" rx="24" ry="5" fill="#1e1e1e" stroke="#555" stroke-width=".9"/>
       <path d="M41 24 Q41 8 55 6 Q69 8 69 24 Z" fill="#c8a882" stroke="#b09070" stroke-width=".9"/>
       <ellipse cx="55" cy="24" rx="14" ry="5" fill="#b09070"/>
@@ -387,63 +359,26 @@ select.modal-inp{-webkit-appearance:none;appearance:none;background-color:var(--
       <path d="M36 103 Q14 101 8 118 Q2 136 17 144" fill="none" stroke="#5a2e10" stroke-width="8" stroke-linecap="round"/>
       <path d="M36 103 Q14 101 8 118 Q2 136 17 144" fill="none" stroke="#7a4020" stroke-width="5.5" stroke-linecap="round"/>
       <rect x="11" y="142" width="16" height="5.5" rx="2.5" fill="#7a5535"/>
-      <defs><linearGradient id="mg2" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#333"/><stop offset="35%" stop-color="#777"/>
-        <stop offset="55%" stop-color="#999"/><stop offset="100%" stop-color="#444"/>
-      </linearGradient></defs>
+      <defs><linearGradient id="mg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#333"/><stop offset="35%" stop-color="#777"/><stop offset="55%" stop-color="#999"/><stop offset="100%" stop-color="#444"/></linearGradient></defs>
     </svg>
   </div>
   <div class="v-text">СКИДУЙ ТЕЛЬНЯХУ<br>И ГАЗУЙ НА ЧАХУ</div>
-  <button class="v-close" onclick="closeVictory()">ЗАКРЫТЬ</button>
+  <button class="v-close" onclick="document.getElementById('victory-overlay').classList.remove('show')">ЗАКРЫТЬ</button>
 </div>
 <div id="crew-victory">
-  <div class="cv-bed">🛏️</div>
-  <div class="cv-text">ТЕПЕРЬ МОЖЕШЬ<br>ПОСПАТЬ</div>
+  <div class="cvbed">🛏️</div>
+  <div class="cvtxt">ТЕПЕРЬ МОЖЕШЬ<br>ПОСПАТЬ</div>
   <button class="v-close" onclick="document.getElementById('crew-victory').classList.remove('show')">ЗАКРЫТЬ</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// FIREBASE CONFIG
-// ═══════════════════════════════════════════════════════════════
-const LOCAL_VER = '2.1';
-// Bump to wipe local session cache
-(function(){
-  if(localStorage.getItem('__lver')!==LOCAL_VER){
-    localStorage.removeItem('__session');
-    localStorage.setItem('__lver',LOCAL_VER);
-  }
-})();
-
-let DB_URL = 'https://bort-30052-default-rtdb.firebaseio.com';
-// Firebase REST helpers
-async function fbGet(path){
-  const r=await fetch(DB_URL+path+'.json');
-  if(!r.ok)throw new Error('DB read error');
-  return r.json();
-}
-async function fbSet(path,data){
-  await fetch(DB_URL+path+'.json',{method:'PUT',body:JSON.stringify(data)});
-}
-async function fbPatch(path,data){
-  await fetch(DB_URL+path+'.json',{method:'PATCH',body:JSON.stringify(data)});
-}
-async function fbPush(path,data){
-  const r=await fetch(DB_URL+path+'.json',{method:'POST',body:JSON.stringify(data)});
-  return r.json();
-}
-async function fbDelete(path){
-  await fetch(DB_URL+path+'.json',{method:'DELETE'});
-}
-
-// ═══════════════════════════════════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════════════════════════════════
-const ALL_ROLES=['Капитан','Старший помощник','Второй помощник','Матрос',
-  'Старший механик','Второй механик','Старшая стюардесса','Стюардесса','Шеф-повар','Повар на экипаж'];
-
+const DB='https://bort-30052-default-rtdb.firebaseio.com';
+const ALL_ROLES=['Капитан','Старший помощник','Второй помощник','Матрос','Старший механик','Второй механик','Старшая стюардесса','Стюардесса','Шеф-повар','Повар на экипаж'];
+const SILVER_ROLES=['Старший помощник','Второй помощник'];
+// Roles excluded from duty assignment
+const NO_DUTY_ROLES=['Капитан','Старший помощник','Второй помощник'];
 const DEFAULT_SECTIONS=[
   {id:'sec_starpom',name:'Стар.пом',  editRoles:['Старший помощник','Второй помощник'],viewRoles:[],order:1},
   {id:'sec_mech',   name:'Механики', editRoles:['Старший механик','Второй механик'],  viewRoles:[],order:2},
@@ -453,402 +388,238 @@ const DEFAULT_SECTIONS=[
   {id:'sec_duty',   name:'🔔 Дежурные',editRoles:[],viewRoles:[],isDuty:true,         order:6}
 ];
 
-// ═══════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════
+// ── LOCAL VER (session only, not data) ──
+const LV='2.2';
+if(localStorage.getItem('__lv')!==LV){localStorage.removeItem('__session');localStorage.setItem('__lv',LV);}
 const DID=(()=>{let id=localStorage.getItem('__did');if(!id){id='d'+Date.now()+'_'+Math.random().toString(36).slice(2,8);localStorage.setItem('__did',id);}return id;})();
-let CU=null; // current user account
-let sections=[];
-let currentSection=null,currentTab='today',calY,calM,calSel=null;
-let victorySeen=false,crewVictorySeen={};
-let editSecId=null;
-let taskListeners={}; // section -> unsubscribe fn
-let prevTaskCounts={};
 
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
+// ── FIREBASE REST ──
+async function fbG(p){const r=await fetch(DB+p+'.json');return r.ok?r.json():null;}
+async function fbS(p,d){await fetch(DB+p+'.json',{method:'PUT',body:JSON.stringify(d)});}
+async function fbP(p,d){await fetch(DB+p+'.json',{method:'PATCH',body:JSON.stringify(d)});}
+async function fbD(p){await fetch(DB+p+'.json',{method:'DELETE'});}
+function o2a(o){if(!o||typeof o!=='object')return[];return Object.entries(o).map(([id,v])=>({...v,id}));}
+function a2o(a){const o={};a.forEach(s=>{o[s.id]=s;});return o;}
+
+// ── STATE ──
+let CU=null,sections=[],curSec=null,curTab='today',calY,calM,calSel=null,victorySeen=false,crewVictorySeen={};
+let editSecId=null,assignDate=null;
+// SSE streams
+let sseStreams={}; // key -> EventSource
+
+// ── BADGE HELPERS ──
+function badgeClass(role){if(role==='Капитан')return'cap';if(SILVER_ROLES.includes(role))return'sil';return'bro';}
+function mkBadge(name,role){
+  const s=document.createElement('span');s.className='abadge '+badgeClass(role);
+  s.innerHTML=`<span>${name}</span><span class="bsep"></span><span class="brole">${role||''}</span>`;return s;
+}
+function isCap(){return CU&&CU.isCaptain;}
+function dStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayS(){return dStr();}
+function tomorrowS(){const d=new Date();d.setDate(d.getDate()+1);return dStr(d);}
+function fTime(iso){if(!iso)return'—';const d=new Date(iso);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function canView(sec){if(isCap())return true;if(!CU)return false;if(sec.isDuty)return true;const er=sec.editRoles||[],vr=sec.viewRoles||[];if(!er.length&&!vr.length)return true;return er.includes(CU.role)||vr.includes(CU.role);}
+function canEdit(sec){if(isCap())return true;if(!CU)return false;const er=sec.editRoles||[];return!er.length||er.includes(CU.role);}
+function visSecs(){return sections.filter(s=>canView(s));}
+
+// ── INIT ──
 async function init(){
-  showScreen('screen-splash');
-  // Try resume session
-  const sessAccId=localStorage.getItem('__session');
-  if(sessAccId){
-    try{
-      const acc=await fbGet('/accounts/'+sessAccId);
-      if(acc&&acc.name){CU=acc;CU.id=sessAccId;await afterLogin();return;}
-    }catch(e){}
-  }
-  await loadSections();
-  await buildLoginForm();
-  showScreen('screen-login');
+  showS('sc-splash');
+  const sid=localStorage.getItem('__session');
+  if(sid){try{const a=await fbG('/accounts/'+sid);if(a&&a.name){CU={...a,id:sid};await afterLogin();return;}}catch(e){}}
+  await loadSecs();await buildLoginForm();showS('sc-login');
 }
+function showS(id){document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('hidden');if(s.id!==id)s.classList.add('hidden');});}
 
-async function saveConfig(){
-  let url=document.getElementById('cfg-url').value.trim();
-  if(!url){document.getElementById('cfg-err').textContent='Введите URL';return;}
-  if(url.endsWith('/'))url=url.slice(0,-1);
-  // Test connection
+// ── SECTIONS ──
+async function loadSecs(){
   try{
-    const r=await fetch(url+'/.json');
-    if(!r.ok)throw new Error();
-  }catch{document.getElementById('cfg-err').textContent='Не удалось подключиться. Проверьте URL и правила базы (test mode).';return;}
-  DB_URL=url;localStorage.setItem('__dburl',url);
-  // Init default sections if none
-  const secs=await fbGet('/sections');
-  if(!secs){await fbSet('/sections',arrToObj(DEFAULT_SECTIONS));}
-  await loadSections();
-  await buildLoginForm();
-  showScreen('screen-login');
-}
-
-function arrToObj(arr){const o={};arr.forEach(s=>{o[s.id]=s;});return o;}
-function objToArr(obj){if(!obj)return[];return Object.entries(obj).map(([id,v])=>({...v,id}));}
-
-async function loadSections(){
-  try{
-    const raw=await fbGet('/sections');
-    let arr=objToArr(raw);
-    if(!arr.length){await fbSet('/sections',arrToObj(DEFAULT_SECTIONS));arr=[...DEFAULT_SECTIONS];}
+    const raw=await fbG('/sections');let arr=o2a(raw);
+    if(!arr.length){await fbS('/sections',a2o(DEFAULT_SECTIONS));arr=[...DEFAULT_SECTIONS];}
     else{
-      // Ensure all defaults exist and have order
       let changed=false;
-      DEFAULT_SECTIONS.forEach(def=>{
-        const ex=arr.find(s=>s.id===def.id);
-        if(!ex){arr.push(def);changed=true;}
-        else if(ex.order===undefined){ex.order=def.order;changed=true;}
-      });
-      if(changed)await fbSet('/sections',arrToObj(arr));
+      DEFAULT_SECTIONS.forEach(def=>{const ex=arr.find(s=>s.id===def.id);if(!ex){arr.push(def);changed=true;}else if(ex.order===undefined){ex.order=def.order;changed=true;}});
+      if(changed)await fbS('/sections',a2o(arr));
     }
     sections=arr.sort((a,b)=>(a.order||99)-(b.order||99));
   }catch{sections=[...DEFAULT_SECTIONS];}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// LOGIN / REGISTER
-// ═══════════════════════════════════════════════════════════════
-function hashPass(p){let h=0;for(let i=0;i<p.length;i++){h=(Math.imul(31,h)+p.charCodeAt(i))|0;}return h.toString(36);}
-
+// ── AUTH ──
+function hashP(p){let h=0;for(let i=0;i<p.length;i++){h=(Math.imul(31,h)+p.charCodeAt(i))|0;}return h.toString(36);}
 async function buildLoginForm(){
-  // Load accounts to check if captain exists
-  const accs=await fbGet('/accounts')||{};
-  const capExists=Object.values(accs).some(a=>a.isCaptain);
-  const sel=document.getElementById('reg-role');
-  sel.innerHTML='<option value="" disabled selected>Должность</option>';
-  ALL_ROLES.forEach(r=>{
-    if(r==='Капитан'&&capExists)return;
-    const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);
-  });
+  const accs=await fbG('/accounts')||{};const capEx=Object.values(accs).some(a=>a.isCaptain);
+  const sel=document.getElementById('reg-role');sel.innerHTML='<option value="" disabled selected>Должность</option>';
+  ALL_ROLES.forEach(r=>{if(r==='Капитан'&&capEx)return;const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);});
 }
-
 function switchTab(t){
-  document.getElementById('lform-reg').style.display=t==='reg'?'flex':'none';
-  document.getElementById('lform-in').style.display=t==='in'?'flex':'none';
-  document.getElementById('lform-reg').style.flexDirection='column';
-  document.getElementById('lform-in').style.flexDirection='column';
-  document.getElementById('ltab-reg').classList.toggle('active',t==='reg');
-  document.getElementById('ltab-in').classList.toggle('active',t==='in');
+  ['reg','in'].forEach(x=>{document.getElementById('lf-'+x).style.display=t===x?'flex':'none';document.getElementById('ltab-'+x).classList.toggle('active',t===x);});
+  document.getElementById('lf-reg').style.flexDirection='column';document.getElementById('lf-in').style.flexDirection='column';
 }
-document.getElementById('lform-reg').style.flexDirection='column';
-
+document.getElementById('lf-reg').style.flexDirection='column';
 async function doRegister(){
-  const name=document.getElementById('reg-name').value.trim();
-  const role=document.getElementById('reg-role').value;
-  const pass=document.getElementById('reg-pass').value;
-  const pass2=document.getElementById('reg-pass2').value;
-  const err=document.getElementById('reg-err');err.textContent='';
-  if(!name){err.textContent='Введите имя';return;}
-  if(!role){err.textContent='Выберите должность';return;}
-  if(!pass||pass.length<3){err.textContent='Минимум 3 символа';return;}
-  if(pass!==pass2){err.textContent='Пароли не совпадают';return;}
-  // Check name unique & captain unique
-  const accs=await fbGet('/accounts')||{};
-  const existing=Object.values(accs);
-  if(existing.some(a=>a.name.toLowerCase()===name.toLowerCase())){err.textContent='Имя уже занято';return;}
-  if(role==='Капитан'&&existing.some(a=>a.isCaptain)){err.textContent='Капитан уже зарегистрирован';return;}
-  const id='acc_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-  const acc={id,name,role,passHash:hashPass(pass),isCaptain:role==='Капитан'};
-  await fbSet('/accounts/'+id,acc);
-  CU=acc;localStorage.setItem('__session',id);
-  await afterLogin();
+  const name=document.getElementById('reg-name').value.trim(),role=document.getElementById('reg-role').value,pass=document.getElementById('reg-pass').value,pass2=document.getElementById('reg-pass2').value,err=document.getElementById('reg-err');err.textContent='';
+  if(!name){err.textContent='Введите имя';return;}if(!role){err.textContent='Выберите должность';return;}
+  if(!pass||pass.length<3){err.textContent='Минимум 3 символа';return;}if(pass!==pass2){err.textContent='Пароли не совпадают';return;}
+  const accs=await fbG('/accounts')||{};const ex=Object.values(accs);
+  if(ex.some(a=>a.name.toLowerCase()===name.toLowerCase())){err.textContent='Имя уже занято';return;}
+  if(role==='Капитан'&&ex.some(a=>a.isCaptain)){err.textContent='Капитан уже зарегистрирован';return;}
+  const id='acc_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+  const acc={id,name,role,passHash:hashP(pass),isCaptain:role==='Капитан'};
+  await fbS('/accounts/'+id,acc);CU={...acc};localStorage.setItem('__session',id);await afterLogin();
 }
-
 async function doLogin(){
-  const name=document.getElementById('in-name').value.trim();
-  const pass=document.getElementById('in-pass').value;
-  const err=document.getElementById('in-err');err.textContent='';
+  const name=document.getElementById('in-name').value.trim(),pass=document.getElementById('in-pass').value,err=document.getElementById('in-err');err.textContent='';
   if(!name||!pass){err.textContent='Заполните все поля';return;}
-  const accs=await fbGet('/accounts')||{};
+  const accs=await fbG('/accounts')||{};
   const entry=Object.entries(accs).find(([,a])=>a.name.toLowerCase()===name.toLowerCase());
   if(!entry){err.textContent='Пользователь не найден';return;}
-  const [id,acc]=entry;
-  if(acc.passHash!==hashPass(pass)){err.textContent='Неверный пароль';return;}
-  CU={...acc,id};localStorage.setItem('__session',id);
-  await afterLogin();
+  const [id,acc]=entry;if(acc.passHash!==hashP(pass)){err.textContent='Неверный пароль';return;}
+  CU={...acc,id};localStorage.setItem('__session',id);await afterLogin();
 }
-
 async function afterLogin(){
-  await loadSections();
-  showScreen('screen-main');
-  updateBadge();renderSectionsBar();showNoSection();
-  requestNotificationPermission();
-  startPolling();
+  await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
+  reqNotifPerm();startAllSSE();
 }
-
-function doLogout(){
-  localStorage.removeItem('__session');CU=null;
-  stopAllListeners();showScreen('screen-login');buildLoginForm();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════
-function isCapUser(){return CU&&CU.isCaptain;}
-const SILVER_ROLES=['Старший помощник','Второй помощник'];
-function getBadgeClass(role){
-  if(role==='Капитан'||role==='captain')return'cap';
-  if(SILVER_ROLES.includes(role))return'silver';
-  return'bronze';
-}
-function mkBadge(name,roleLabel){
-  const sp=document.createElement('span');
-  sp.className='abadge '+getBadgeClass(roleLabel);
-  sp.innerHTML=`<span>${name}</span><span class="badge-sep"></span><span class="badge-role">${roleLabel||''}</span>`;
-  return sp;
-}
-function dStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function todayStr(){return dStr();}
-function tomorrowStr(){const d=new Date();d.setDate(d.getDate()+1);return dStr(d);}
-function fTime(iso){if(!iso)return'—';const d=new Date(iso);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
-function canViewSec(sec){
-  if(isCapUser())return true;if(!CU)return false;
-  if(sec.isDuty)return true;
-  const er=sec.editRoles||[],vr=sec.viewRoles||[];
-  if(er.length===0&&vr.length===0)return true;
-  return er.includes(CU.role)||vr.includes(CU.role);
-}
-function canEditSec(sec){
-  if(isCapUser())return true;if(!CU)return false;
-  const er=sec.editRoles||[];
-  return er.length===0||er.includes(CU.role);
-}
-function getVisibleSecs(){return sections.filter(s=>canViewSec(s));}
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('hidden');if(s.id!==id)s.classList.add('hidden');});}
-function showNoSection(){
-  currentSection=null;
-  document.getElementById('select-prompt').style.display='';
-  document.getElementById('content-area').style.display='none';
-  document.getElementById('nav-tabs').style.display='none';
-  document.getElementById('cap-prog').style.display='none';
-  document.getElementById('crew-prog').style.display='none';
-  document.getElementById('main-title').textContent='БОРТ';
-  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.remove('active'));
-}
-
-// ═══════════════════════════════════════════════════════════════
-// BADGE
-// ═══════════════════════════════════════════════════════════════
+function doLogout(){localStorage.removeItem('__session');CU=null;stopAllSSE();showS('sc-login');buildLoginForm();}
 function updateBadge(){
   if(!CU)return;
-  const n=document.getElementById('badge-name'),r=document.getElementById('badge-role');
-  n.textContent=CU.name.toUpperCase();n.className='uname '+(isCapUser()?'cap':'crew');r.textContent=CU.role;
+  document.getElementById('badge-name').textContent=CU.name.toUpperCase();
+  document.getElementById('badge-name').className='uname '+badgeClass(CU.role);
+  document.getElementById('badge-role').textContent=CU.role;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SECTIONS BAR
-// ═══════════════════════════════════════════════════════════════
-function renderSectionsBar(){
-  const bar=document.getElementById('sections-bar');bar.innerHTML='';
-  // Captain tab — only visible to captain
-  if(isCapUser()){
-    const cap=document.createElement('div');
-    cap.className='sec-tab'+(currentSection==='captain'?' active':'');
-    cap.dataset.sec='captain';cap.textContent='⚓ Капитан';
-    cap.onclick=()=>setSec('captain');bar.appendChild(cap);
-  }
-  getVisibleSecs().forEach(sec=>{
-    const el=document.createElement('div');
-    el.className='sec-tab'+(sec.isDuty?' duty':'')+(currentSection===sec.id?' active':'');
-    el.dataset.sec=sec.id;el.textContent=sec.name;
-    el.onclick=()=>setSec(sec.id);bar.appendChild(el);
+// ── SECTIONS BAR ──
+function renderSBar(){
+  const bar=document.getElementById('sbar');bar.innerHTML='';
+  if(isCap()){const c=document.createElement('div');c.className='stab'+(curSec==='captain'?' active':'');c.dataset.sec='captain';c.textContent='⚓ Капитан';c.onclick=()=>setSec('captain');bar.appendChild(c);}
+  visSecs().forEach(sec=>{const el=document.createElement('div');el.className='stab'+(sec.isDuty?' duty':'')+(curSec===sec.id?' active':'');el.dataset.sec=sec.id;el.textContent=sec.name;el.onclick=()=>setSec(sec.id);bar.appendChild(el);});
+}
+function showNoSec(){curSec=null;document.getElementById('sp').style.display='';document.getElementById('carea').style.display='none';document.getElementById('ntabs').style.display='none';document.getElementById('cap-prog').style.display='none';document.getElementById('crew-prog').style.display='none';document.getElementById('main-title').textContent='БОРТ';document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));}
+function setSec(sid){
+  curSec=sid;document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('active',t.dataset.sec===sid));
+  const isCap_=sid==='captain';const sec=sections.find(s=>s.id===sid);
+  document.getElementById('cap-prog').style.display=isCap_?'':'none';document.getElementById('crew-prog').style.display=isCap_?'none':'';
+  document.getElementById('main-title').textContent=isCap_?'БОРТ':(sec?.name?.toUpperCase()||'');
+  document.getElementById('sp').style.display='none';document.getElementById('carea').style.display='';document.getElementById('ntabs').style.display='flex';
+  // Duty section: only has calendar tab (no today/tomorrow/done)
+  const isDuty=sec?.isDuty;
+  document.querySelectorAll('.ntab').forEach(t=>{
+    if(isDuty){t.style.display=t.dataset.tab==='calendar'?'':'none';}else{t.style.display='';}
   });
+  if(isDuty&&curTab!=='calendar')curTab='calendar';
+  setTab(curTab);
+}
+document.querySelectorAll('.ntab').forEach(t=>{t.onclick=()=>setTab(t.dataset.tab);});
+function setTab(tab){curTab=tab;document.querySelectorAll('.ntab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));renderC();}
+
+// ── RENDER ──
+function renderC(){
+  if(!curSec)return;
+  const area=document.getElementById('carea');area.innerHTML='';
+  const sec=sections.find(s=>s.id===curSec);
+  if(sec?.isDuty){renderDutyCalendar(area);return;}
+  if(curTab==='today')renderDay(area,todayS());
+  else if(curTab==='tomorrow')renderDay(area,tomorrowS());
+  else if(curTab==='calendar')renderCalendar(area);
+  else if(curTab==='done')renderDone(area);
+  updateProg();
 }
 
-async function setSec(secId){
-  currentSection=secId;
-  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===secId));
-  const isCap=secId==='captain';
-  document.getElementById('cap-prog').style.display=isCap?'':'none';
-  document.getElementById('crew-prog').style.display=isCap?'none':'';
-  const sec=sections.find(s=>s.id===secId);
-  document.getElementById('main-title').textContent=isCap?'БОРТ':(sec?.name?.toUpperCase()||'');
-  document.getElementById('select-prompt').style.display='none';
-  document.getElementById('content-area').style.display='';
-  document.getElementById('nav-tabs').style.display='flex';
-  setTab(currentTab);
-  listenSection(secId);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════════════════════
-document.querySelectorAll('#nav-tabs .tab').forEach(t=>{t.onclick=()=>setTab(t.dataset.tab);});
-function setTab(tab){
-  currentTab=tab;
-  document.querySelectorAll('#nav-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
-  renderContent();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════
-function renderContent(){
-  if(!currentSection)return;
-  const area=document.getElementById('content-area');area.innerHTML='';
-  if(currentTab==='today')renderDay(area,todayStr());
-  else if(currentTab==='tomorrow')renderDay(area,tomorrowStr());
-  else if(currentTab==='calendar')renderCalendar(area);
-  else if(currentTab==='done')renderDone(area);
-  updateProgress();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// DAY TASKS (reads from Firebase)
-// ═══════════════════════════════════════════════════════════════
+// ── DAY ──
 async function renderDay(area,date){
   area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
-  const raw=await fbGet('/tasks/'+currentSection+'/'+date)||{};
-  const tasks=objToArr(raw).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
+  const tasks=o2a(raw).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
   area.innerHTML='';
   const d=new Date(date+'T00:00:00');
   const DAYS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
   const MONS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  const dh=document.createElement('div');dh.className='date-header';
-  dh.innerHTML=`<div class="date-big">${DAYS[d.getDay()]}</div><div class="date-sub">${d.getDate()} ${MONS[d.getMonth()]} ${d.getFullYear()}</div>`;
-  area.appendChild(dh);
+  const dh=document.createElement('div');dh.className='dh';dh.innerHTML=`<div class="db">${DAYS[d.getDay()]}</div><div class="ds">${d.getDate()} ${MONS[d.getMonth()]} ${d.getFullYear()}</div>`;area.appendChild(dh);
   tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTask(task,date)));
-  const sec=sections.find(s=>s.id===currentSection);
-  const canEdit=currentSection==='captain'?isCapUser():(sec?canEditSec(sec):false);
-  if(canEdit){
-    const ab=document.createElement('div');ab.className='add-btn';
-    ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
-    ab.onclick=()=>addTask(date);area.appendChild(ab);
-  } else {
-    const rn=document.createElement('div');rn.className='ro-note';rn.textContent='👁 Только просмотр';area.appendChild(rn);
-  }
+  const sec=sections.find(s=>s.id===curSec);
+  const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
+  if(ce){const ab=document.createElement('div');ab.className='add-btn';ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';ab.onclick=()=>addTask(date);area.appendChild(ab);}
+  else{const rn=document.createElement('div');rn.className='ro-note';rn.textContent='👁 Только просмотр';area.appendChild(rn);}
 }
-
 async function addTask(date){
   const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
-  const task={id,text:'',done:false,
-    authorName:CU.name,authorRole:isCapUser()?'captain':'crew',authorRoleLabel:CU.role,
-    authorAccId:CU.id,section:currentSection,
-    createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
-  await fbSet('/tasks/'+currentSection+'/'+date+'/'+id,task);
+  const task={id,text:'',done:false,authorName:CU.name,authorRole:isCap()?'captain':'crew',authorRoleLabel:CU.role,authorAccId:CU.id,section:curSec,createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
+  await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
   playSound('add');
-  // SSE will trigger re-render; but focus new field immediately
-  renderContent();
-  setTimeout(()=>{const el=document.querySelector(`.task-text[data-id="${id}"]`);if(el)el.focus();},200);
+  setTimeout(()=>{const el=document.querySelector(`.ttxt[data-id="${id}"]`);if(el)el.focus();},300);
 }
-
 function mkTask(task,date){
-  const sec=sections.find(s=>s.id===currentSection);
-  const textEditable=isCapUser()||task.authorAccId===CU?.id;
-  const canSwipe=currentSection==='captain'?isCapUser():(sec?canEditSec(sec):false);
-  const item=document.createElement('div');item.className='task-item';
-  const sbg=document.createElement('div');sbg.className='task-swipe-bg';sbg.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbg);
-  const content=document.createElement('div');content.className='task-content';
-  const row=document.createElement('div');row.className='task-row';
-  const text=document.createElement('div');text.className='task-text';
-  text.contentEditable=textEditable?'true':'false';
-  text.dataset.id=task.id;text.dataset.ph='Опишите задачу...';text.textContent=task.text||'';
-  const saveBtn=document.createElement('button');saveBtn.className='save-btn';saveBtn.innerHTML='✓ &nbsp;Сохранить';
-  const delBtn=document.createElement('button');delBtn.className='del-btn';delBtn.textContent='×';
-  if(textEditable){
-    text.addEventListener('input',()=>saveBtn.classList.add('show'));
-    text.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveBtn.click();}});
-    saveBtn.onclick=async()=>{
-      const t=text.textContent.trim();
-      await fbPatch('/tasks/'+currentSection+'/'+date+'/'+task.id,{text:t});
-      saveBtn.classList.remove('show');text.blur();updateProgress();
-    };
-    delBtn.onclick=async()=>{await fbDelete('/tasks/'+currentSection+'/'+date+'/'+task.id);renderContent();};
-  } else {delBtn.style.display='none';}
-  row.appendChild(text);row.appendChild(delBtn);content.appendChild(row);content.appendChild(saveBtn);
-  const meta=document.createElement('div');meta.className='task-meta';
-  const top=document.createElement('div');top.className='meta-top';
-  top.appendChild(mkBadge(task.authorName, task.authorRoleLabel||task.authorRole));
-  meta.appendChild(top);
-  const bot=document.createElement('div');bot.className='meta-bot';bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
-  content.appendChild(meta);item.appendChild(content);
-  if(canSwipe)setupSwipe(item,content,sbg,()=>completeTask(task.id,date));
+  const sec=sections.find(s=>s.id===curSec);
+  const editable=isCap()||task.authorAccId===CU?.id;
+  const canSwipe=curSec==='captain'?isCap():(sec?canEdit(sec):false);
+  const item=document.createElement('div');item.className='titem';
+  const sbg=document.createElement('div');sbg.className='tswbg';sbg.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbg);
+  const cont=document.createElement('div');cont.className='tcont';
+  const row=document.createElement('div');row.className='trow';
+  const txt=document.createElement('div');txt.className='ttxt';txt.contentEditable=editable?'true':'false';txt.dataset.id=task.id;txt.dataset.ph='Опишите задачу...';txt.textContent=task.text||'';
+  const sv=document.createElement('button');sv.className='save-btn';sv.innerHTML='✓ &nbsp;Сохранить';
+  const dl=document.createElement('button');dl.className='del-btn';dl.textContent='×';
+  if(editable){
+    txt.addEventListener('input',()=>sv.classList.add('show'));
+    txt.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sv.click();}});
+    sv.onclick=async()=>{const t=txt.textContent.trim();await fbP('/tasks/'+curSec+'/'+date+'/'+task.id,{text:t});sv.classList.remove('show');txt.blur();};
+    dl.onclick=async()=>await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
+  }else{dl.style.display='none';}
+  row.appendChild(txt);row.appendChild(dl);cont.appendChild(row);cont.appendChild(sv);
+  const meta=document.createElement('div');meta.className='tmeta';
+  const top=document.createElement('div');top.className='mtop';top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));meta.appendChild(top);
+  const bot=document.createElement('div');bot.className='mbot';bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
+  cont.appendChild(meta);item.appendChild(cont);
+  if(canSwipe)setupSwipe(item,cont,sbg,()=>completeTask(task.id,date));
   return item;
 }
-
-async function completeTask(taskId,date){
-  await fbPatch('/tasks/'+currentSection+'/'+date+'/'+taskId,{
-    done:true,completedAt:new Date().toISOString(),
-    completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role
-  });
+async function completeTask(tid,date){
+  await fbP('/tasks/'+curSec+'/'+date+'/'+tid,{done:true,completedAt:new Date().toISOString(),completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role});
   playSound('done');showToast('✓ Выполнено');
-  // No need to re-render — SSE listener will trigger it
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SWIPE
-// ═══════════════════════════════════════════════════════════════
-function setupSwipe(item,content,bg,cb){
-  let sx=0,sy=0,dx=0,act=false,done=false;const T=80;
-  item.addEventListener('touchstart',e=>{if(done)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;act=true;dx=0;},{passive:true});
+// ── SWIPE ──
+function setupSwipe(item,cont,bg,cb){
+  let sx=0,sy=0,dx=0,act=false,dn=false;const T=80;
+  item.addEventListener('touchstart',e=>{if(dn)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;act=true;dx=0;},{passive:true});
   item.addEventListener('touchmove',e=>{
-    if(!act||done)return;dx=e.touches[0].clientX-sx;const dy=Math.abs(e.touches[0].clientY-sy);
+    if(!act||dn)return;dx=e.touches[0].clientX-sx;const dy=Math.abs(e.touches[0].clientY-sy);
     if(dy>20&&Math.abs(dx)<dy){act=false;return;}if(dx<0){dx=0;return;}
-    const p=Math.min(dx/T,1);content.style.transform=`translateX(${dx}px)`;bg.style.opacity=p;
-    content.style.setProperty('--gp',Math.round(p*100)+'%');content.classList.toggle('greening',p>0);
+    const p=Math.min(dx/T,1);cont.style.transform=`translateX(${dx}px)`;bg.style.opacity=p;
+    cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('greening',p>0);
   },{passive:true});
   item.addEventListener('touchend',()=>{
     if(!act)return;act=false;
-    if(dx>=T){done=true;content.style.transform=`translateX(${window.innerWidth}px)`;bg.style.opacity=1;content.style.transition='transform .3s ease';setTimeout(cb,280);}
-    else{content.style.transform='';bg.style.opacity=0;content.classList.remove('greening');}dx=0;
+    if(dx>=T){dn=true;cont.style.transform=`translateX(${window.innerWidth}px)`;bg.style.opacity=1;cont.style.transition='transform .3s ease';setTimeout(cb,280);}
+    else{cont.style.transform='';bg.style.opacity=0;cont.classList.remove('greening');}dx=0;
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PROGRESS
-// ═══════════════════════════════════════════════════════════════
-async function updateProgress(){
-  if(!currentSection)return;
-  const raw=await fbGet('/tasks/'+currentSection+'/'+todayStr())||{};
-  const tt=objToArr(raw).filter(t=>t.text&&t.text.trim());
-  const total=tt.length,done=tt.filter(t=>t.done).length;
-  const pct=total>0?Math.round(done/total*100):0;
-  if(currentSection==='captain'){
-    document.getElementById('cap-fill').style.width=pct+'%';document.getElementById('cap-pct').textContent=pct+'%';
-    if(pct===100&&total>0&&!victorySeen){victorySeen=true;setTimeout(showVictory,800);}
-    else if(pct<100)victorySeen=false;
-  } else {
-    document.getElementById('crew-fill').style.width=pct+'%';document.getElementById('crew-pct').textContent=pct+'%';
-    if(pct===100&&total>0&&!crewVictorySeen[currentSection]){crewVictorySeen[currentSection]=true;setTimeout(()=>document.getElementById('crew-victory').classList.add('show'),800);}
-    else if(pct<100)crewVictorySeen[currentSection]=false;
-  }
+// ── PROGRESS ──
+async function updateProg(){
+  if(!curSec)return;
+  const raw=await fbG('/tasks/'+curSec+'/'+todayS())||{};
+  const tt=o2a(raw).filter(t=>t.text&&t.text.trim());
+  const total=tt.length,done=tt.filter(t=>t.done).length,pct=total>0?Math.round(done/total*100):0;
+  if(curSec==='captain'){document.getElementById('cap-fill').style.width=pct+'%';document.getElementById('cap-pct').textContent=pct+'%';if(pct===100&&total>0&&!victorySeen){victorySeen=true;setTimeout(()=>document.getElementById('victory-overlay').classList.add('show'),800);}else if(pct<100)victorySeen=false;}
+  else{document.getElementById('crew-fill').style.width=pct+'%';document.getElementById('crew-pct').textContent=pct+'%';if(pct===100&&total>0&&!crewVictorySeen[curSec]){crewVictorySeen[curSec]=true;setTimeout(()=>document.getElementById('crew-victory').classList.add('show'),800);}else if(pct<100)crewVictorySeen[curSec]=false;}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CALENDAR
-// ═══════════════════════════════════════════════════════════════
+// ── CALENDAR (regular) ──
 async function renderCalendar(area){
   const now=new Date();if(!calY){calY=now.getFullYear();calM=now.getMonth();}
-  const wrap=document.createElement('div');wrap.className='calendar-wrap';
+  const wrap=document.createElement('div');wrap.className='cal-wrap';
   const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  const hdr=document.createElement('div');hdr.className='cal-header';
-  hdr.innerHTML=`<button class="cal-nav" id="cal-prev">‹</button><div class="cal-month">${MN[calM].toUpperCase()} ${calY}</div><button class="cal-nav" id="cal-next">›</button>`;
+  const hdr=document.createElement('div');hdr.className='cal-hdr';
+  hdr.innerHTML=`<button class="cal-nav" id="cal-prev">‹</button><div class="cal-mon">${MN[calM].toUpperCase()} ${calY}</div><button class="cal-nav" id="cal-next">›</button>`;
   wrap.appendChild(hdr);
-  // Fetch task dates for this section/month
-  const secTasks=await fbGet('/tasks/'+currentSection)||{};
-  const taskDates=new Set(Object.keys(secTasks).filter(k=>k.startsWith(calY+'-'+String(calM+1).padStart(2,'0'))));
+  const secTasks=await fbG('/tasks/'+curSec)||{};
+  const taskDates=new Set(Object.keys(secTasks||{}).filter(k=>k.startsWith(calY+'-'+String(calM+1).padStart(2,'0'))));
   const grid=document.createElement('div');grid.className='cal-grid';
   ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'].forEach(d=>{const el=document.createElement('div');el.className='cal-dn';el.textContent=d;grid.appendChild(el);});
   let sd=new Date(calY,calM,1).getDay()-1;if(sd<0)sd=6;
-  const dim=new Date(calY,calM+1,0).getDate(),today=todayStr();
+  const dim=new Date(calY,calM+1,0).getDate(),today=todayS();
   for(let i=0;i<sd;i++)grid.appendChild(document.createElement('div'));
   for(let d=1;d<=dim;d++){
     const ds=dStr(new Date(calY,calM,d));
@@ -856,248 +627,220 @@ async function renderCalendar(area){
     if(ds===today)el.classList.add('today');
     if(taskDates.has(ds))el.classList.add('has-tasks');
     if(ds===calSel)el.classList.add('sel');
-    el.textContent=d;el.onclick=()=>{calSel=ds;renderContent();};grid.appendChild(el);
+    el.textContent=d;el.onclick=()=>{calSel=ds;renderC();};grid.appendChild(el);
   }
   wrap.appendChild(grid);area.appendChild(wrap);
-  if(calSel){const sep=document.createElement('div');sep.className='sec-sep';area.appendChild(sep);renderDay(area,calSel);}
-  document.getElementById('cal-prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}renderContent();};
-  document.getElementById('cal-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}renderContent();};
+  if(calSel){const sep=document.createElement('div');sep.className='secsep';area.appendChild(sep);renderDay(area,calSel);}
+  document.getElementById('cal-prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}calSel=null;renderC();};
+  document.getElementById('cal-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}calSel=null;renderC();};
 }
 
-// ═══════════════════════════════════════════════════════════════
-// DONE
-// ═══════════════════════════════════════════════════════════════
+// ── DUTY CALENDAR ──
+async function renderDutyCalendar(area){
+  const now=new Date();if(!calY){calY=now.getFullYear();calM=now.getMonth();}
+  const sec=sections.find(s=>s.id===curSec);
+  const canAssign=isCap()||canEdit(sec);
+  const wrap=document.createElement('div');wrap.className='cal-wrap';
+  const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const hdr=document.createElement('div');hdr.className='cal-hdr';
+  hdr.innerHTML=`<button class="cal-nav" id="dc-prev">‹</button><div class="cal-mon">${MN[calM].toUpperCase()} ${calY}</div><button class="cal-nav" id="dc-next">›</button>`;
+  wrap.appendChild(hdr);
+  // Load duty assignments for this month
+  const monthKey=calY+'-'+String(calM+1).padStart(2,'0');
+  const dutyRaw=await fbG('/duty')||{};
+  const grid=document.createElement('div');grid.className='cal-grid';
+  ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'].forEach(d=>{const el=document.createElement('div');el.className='cal-dn';el.textContent=d;grid.appendChild(el);});
+  let sd=new Date(calY,calM,1).getDay()-1;if(sd<0)sd=6;
+  const dim=new Date(calY,calM+1,0).getDate(),today=todayS();
+  for(let i=0;i<sd;i++)grid.appendChild(document.createElement('div'));
+  for(let d=1;d<=dim;d++){
+    const ds=dStr(new Date(calY,calM,d));
+    const el=document.createElement('div');el.className='cal-day';
+    if(ds===today)el.classList.add('today');
+    if(dutyRaw[ds])el.classList.add('has-duty');
+    if(ds===calSel)el.classList.add('sel');
+    el.textContent=d;
+    el.onclick=()=>{
+      calSel=ds;
+      renderC();
+      // Show duty tooltip if assigned
+      if(dutyRaw[ds]){showDutyTooltip(dutyRaw[ds],el);}
+    };
+    grid.appendChild(el);
+  }
+  wrap.appendChild(grid);area.appendChild(wrap);
+  // If date selected and user can assign
+  if(calSel){
+    const sep=document.createElement('div');sep.className='secsep';area.appendChild(sep);
+    const selDate=new Date(calSel+'T00:00:00');
+    const selLbl=document.createElement('div');selLbl.style.cssText='padding:0 4px 12px;font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:2px;';
+    selLbl.textContent=selDate.getDate()+' '+MN[selDate.getMonth()].toUpperCase();area.appendChild(selLbl);
+    if(dutyRaw[calSel]){
+      const d=dutyRaw[calSel];const assigned=document.createElement('div');assigned.className='duty-day-row';
+      const badge=document.createElement('div');badge.className='duty-badge '+badgeClass(d.role);
+      badge.innerHTML=`<span>${d.name}</span><span style="opacity:.5;font-size:10px;margin-left:4px">${d.role}</span>`;
+      assigned.appendChild(badge);
+      if(canAssign){const unBtn=document.createElement('button');unBtn.className='duty-assign-btn';unBtn.textContent='Снять';unBtn.onclick=async()=>{await fbD('/duty/'+calSel);renderC();};assigned.appendChild(unBtn);}
+      area.appendChild(assigned);
+    }
+    if(canAssign&&!dutyRaw[calSel]){
+      const ab=document.createElement('div');ab.className='duty-assign-btn';ab.textContent='+ Назначить дежурного';ab.style.cssText='display:inline-block;cursor:pointer;margin:4px 0;';
+      ab.onclick=()=>openAssignModal(calSel);area.appendChild(ab);
+    }
+    if(!dutyRaw[calSel]&&!canAssign){
+      const emp=document.createElement('div');emp.className='duty-empty';emp.style.padding='8px 4px';emp.textContent='Дежурный не назначен';area.appendChild(emp);
+    }
+  }
+  document.getElementById('dc-prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}calSel=null;renderC();};
+  document.getElementById('dc-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}calSel=null;renderC();};
+}
+
+function showDutyTooltip(duty,anchorEl){
+  const existing=document.querySelector('.duty-tooltip');if(existing)existing.remove();
+  const tt=document.createElement('div');tt.className='duty-tooltip';
+  const rect=anchorEl.getBoundingClientRect();
+  tt.style.top=(rect.bottom+8)+'px';
+  tt.innerHTML=`<span class="dt-name">${duty.name}</span><span class="dt-role">${duty.role}</span>`;
+  document.body.appendChild(tt);
+  setTimeout(()=>{tt.style.opacity='0';tt.style.transition='opacity .3s';setTimeout(()=>tt.remove(),300);},2000);
+}
+
+async function openAssignModal(date){
+  assignDate=date;
+  document.getElementById('assign-title').textContent='Дежурный на '+date;
+  const list=document.getElementById('assign-list');list.innerHTML='<div style="padding:12px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
+  openM('m-assign');
+  const accs=await fbG('/accounts')||{};
+  const people=Object.entries(accs).map(([id,a])=>({...a,id})).filter(a=>!NO_DUTY_ROLES.includes(a.role));
+  list.innerHTML='';
+  if(!people.length){list.innerHTML='<div style="padding:16px;text-align:center;color:var(--dim)">Нет доступных участников</div>';return;}
+  people.forEach(p=>{
+    const item=document.createElement('div');item.className='assign-person';
+    item.innerHTML=`<div class="ap-info"><div class="ap-name">${p.name}</div><div class="ap-role">${p.role}</div></div><span style="color:var(--gold);font-size:18px">›</span>`;
+    item.onclick=async()=>{
+      await fbS('/duty/'+assignDate,{name:p.name,role:p.role,accId:p.id,assignedBy:CU.name,assignedAt:new Date().toISOString()});
+      closeM('m-assign');renderC();showToast('✓ Назначен: '+p.name);
+    };
+    list.appendChild(item);
+  });
+}
+
+// ── DONE ──
 async function renderDone(area){
   area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
-  const today=todayStr();const allDone=[];
-  const secsToShow=currentSection==='captain'?(isCapUser()?[{id:'captain',name:'Капитан'}]:[]):getVisibleSecs();
+  const today=todayS();const allDone=[];
+  const secsToShow=curSec==='captain'?(isCap()?[{id:'captain',name:'Капитан'}]:[]):visSecs().filter(s=>!s.isDuty);
   for(const sec of secsToShow){
-    const raw=await fbGet('/tasks/'+sec.id)||{};
-    Object.entries(raw||{}).forEach(([date,dateObj])=>{
-      objToArr(dateObj||{}).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:sec.name,sectionId:sec.id}));
-    });
+    const raw=await fbG('/tasks/'+sec.id)||{};
+    Object.entries(raw||{}).forEach(([date,dateObj])=>{o2a(dateObj||{}).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:sec.name,sectionId:sec.id}));});
   }
   area.innerHTML='';
   allDone.sort((a,b)=>new Date(b.completedAt||b.createdAt)-new Date(a.completedAt||a.createdAt));
-  if(!allDone.length){area.innerHTML='<div class="empty-state"><div class="ei">📋</div><p>Выполненных задач пока нет</p></div>';return;}
+  if(!allDone.length){area.innerHTML='<div class="empty-st"><div class="ei">📋</div><p>Выполненных задач пока нет</p></div>';return;}
   const grouped={};allDone.forEach(t=>{if(!grouped[t.date])grouped[t.date]=[];grouped[t.date].push(t);});
   Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
-    const sep=document.createElement('div');sep.className='done-date-sep';
-    const d=new Date(date+'T00:00:00');
-    const MN=['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
-    sep.textContent=`${d.getDate()} ${MN[d.getMonth()]} ${d.getFullYear()}`;area.appendChild(sep);
+    const sep=document.createElement('div');sep.className='done-sep';
+    const d=new Date(date+'T00:00:00');const MN2=['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+    sep.textContent=`${d.getDate()} ${MN2[d.getMonth()]} ${d.getFullYear()}`;area.appendChild(sep);
     grouped[date].forEach(task=>area.appendChild(mkDoneEl(task,date,date===today)));
   });
 }
 function mkDoneEl(task,date,isToday){
-  const canRevert=isToday&&(isCapUser()||task.completedByAccId===CU?.id);
+  const canRev=isToday&&(isCap()||task.completedByAccId===CU?.id);
   const item=document.createElement('div');item.className='done-item';
-  const bg=document.createElement('div');bg.className='done-swipe-bg';bg.innerHTML='<span style="font-size:18px;color:rgba(255,255,255,.6)">↩</span>';item.appendChild(bg);
-  const content=document.createElement('div');content.className='done-content';
-  const textEl=document.createElement('div');textEl.className='done-text';textEl.textContent=task.text;content.appendChild(textEl);
-  const top=document.createElement('div');top.className='done-meta-top';
-  top.appendChild(mkBadge(task.authorName, task.authorRoleLabel||task.authorRole));
+  const bg=document.createElement('div');bg.className='done-swbg';bg.innerHTML='<span style="font-size:18px;color:rgba(255,255,255,.6)">↩</span>';item.appendChild(bg);
+  const cont=document.createElement('div');cont.className='done-cont';
+  const tx=document.createElement('div');tx.className='done-txt';tx.textContent=task.text;cont.appendChild(tx);
+  const top=document.createElement('div');top.className='done-mtop';
+  top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));
   if(task.sectionLabel){const sb=document.createElement('span');sb.className='sec-badge';sb.textContent=task.sectionLabel;top.appendChild(sb);}
-  content.appendChild(top);
-  const bot=document.createElement('div');bot.className='done-meta-bot';
-  const completerName=task.completedByName?` · выполнил: ${task.completedByName}`:'';
-  bot.textContent=`создано ${fTime(task.createdAt)} · выполнено ${fTime(task.completedAt)}${completerName}`;
-  if(canRevert){const h=document.createElement('span');h.className='revert-hint';h.textContent=' · ← вернуть';bot.appendChild(h);}
-  content.appendChild(bot);item.appendChild(content);
-  if(canRevert)setupSwipe(item,content,bg,async()=>{
-    await fbPatch('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null});
-    renderContent();showToast('↩ Возвращено');
-  });
+  cont.appendChild(top);
+  const bot=document.createElement('div');bot.className='done-mbot';
+  bot.textContent=`создано ${fTime(task.createdAt)} · выполнено ${fTime(task.completedAt)}`;
+  if(task.completedByName){
+    const cb=document.createElement('span');cb.style.cssText='display:inline-flex;align-items:center;gap:4px;margin-left:6px;';
+    cb.textContent=' · ';const cbBadge=mkBadge(task.completedByName,task.completedByRole||'');cbBadge.style.fontSize='8px';cbBadge.style.padding='1px 7px';cb.appendChild(cbBadge);bot.appendChild(cb);
+  }
+  if(canRev){const h=document.createElement('span');h.className='revert-hint';h.textContent=' · ← вернуть';bot.appendChild(h);}
+  cont.appendChild(bot);item.appendChild(cont);
+  if(canRev)setupSwipe(item,cont,bg,async()=>{await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});renderC();showToast('↩ Возвращено');});
   return item;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// REAL-TIME via Firebase SSE (EventSource)
-// ═══════════════════════════════════════════════════════════════
-let sseConnections={}; // path -> EventSource
-let sseTaskCounts={}; // secId -> count (for notifications)
-
-function startPolling(){
-  // Subscribe to today's tasks for all visible sections (notifications)
-  stopAllListeners();
-  getVisibleSecs().forEach(sec=>listenSection(sec.id));
-  // Also listen to current section if set
-  if(currentSection)listenCurrentSection(currentSection,currentTab);
+// ── TRUE REAL-TIME SSE ──
+// Firebase SSE: listen to a path and trigger re-render on any change
+function startAllSSE(){
+  stopAllSSE();
+  // Listen to each visible section's today tasks
+  const today=todayS();
+  const allSecIds=[...visSecs().map(s=>s.id)];
+  if(isCap())allSecIds.push('captain');
+  allSecIds.forEach(sid=>sseTask(sid,today));
+  // Also listen to duty
+  sseDuty();
+  // Periodic heartbeat to keep SSE alive on mobile
+  setInterval(()=>{
+    // Re-open any closed streams
+    allSecIds.forEach(sid=>{if(!sseStreams['task_'+sid]||sseStreams['task_'+sid].readyState===2)sseTask(sid,today);});
+    if(!sseStreams['duty']||sseStreams['duty'].readyState===2)sseDuty();
+  },30000);
 }
 
-function listenSection(secId){
-  // Listen for new tasks today on this section for notifications
-  const today=todayStr();
-  const path='/tasks/'+secId+'/'+today;
-  if(sseConnections['notify_'+secId])sseConnections['notify_'+secId].close();
-  const es=new EventSource(DB_URL+path+'.json?accept=text/event-stream');
-  es.addEventListener('put',e=>{
+let prevCounts={};
+function sseTask(sid,date){
+  const key='task_'+sid;
+  if(sseStreams[key]){try{sseStreams[key].close();}catch(e){}}
+  const url=DB+'/tasks/'+sid+'/'+date+'.json?accept=text%2Fevent-stream';
+  const es=new EventSource(url);
+  function handle(data){
     try{
-      const data=JSON.parse(e.data);
-      const tasks=objToArr(data.data||{}).filter(t=>t.text&&t.text.trim()&&t.authorAccId!==CU?.id&&!t.done);
-      const prev=sseTaskCounts[secId]??-1;
-      if(prev!==-1&&tasks.length>prev){
-        const sec=sections.find(s=>s.id===secId);
-        showToast('🔔 Новая задача: '+(sec?.name||secId));
+      const tasks=o2a(data||{}).filter(t=>t.text&&t.text.trim());
+      const newTasks=tasks.filter(t=>t.authorAccId!==CU?.id&&!t.done);
+      const prev=prevCounts[sid]??-1;
+      if(prev!==-1&&newTasks.length>prev){
+        const sec=sections.find(s=>s.id===sid);
+        const secName=sid==='captain'?'Капитан':(sec?.name||sid);
+        showToast('🔔 Новая задача: '+secName);
         playSound('notify');
-        triggerPushNotification('Новая задача в разделе '+(sec?.name||''));
+        sendPush('Новая задача в "'+secName+'"','');
       }
-      sseTaskCounts[secId]=tasks.length;
-      // If this is the currently viewed section/tab, re-render
-      if(secId===currentSection&&(currentTab==='today')){
-        renderContent();
-      }
-    }catch(err){}
-  });
+      prevCounts[sid]=newTasks.length;
+      // Re-render if this is the current section
+      if(sid===curSec&&(curTab==='today'||curTab==='done')){renderC();}
+      if(sid===curSec)updateProg();
+    }catch(e){}
+  }
+  es.addEventListener('put',e=>{try{const d=JSON.parse(e.data);handle(d.data);}catch(e){}});
   es.addEventListener('patch',e=>{
-    if(secId===currentSection&&(currentTab==='today'||currentTab==='done')){
-      renderContent();
-    }
+    // patch = something changed, just re-render current view
+    if(sid===curSec)renderC();
   });
-  es.onerror=()=>{es.close();delete sseConnections['notify_'+secId];};
-  sseConnections['notify_'+secId]=es;
+  es.onerror=()=>{};
+  sseStreams[key]=es;
 }
 
-function listenCurrentSection(secId,tab){
-  // Already handled by listenSection for today
-  // For done/tomorrow/calendar tabs, just re-render on any change to section
-  if(tab==='done'||tab==='tomorrow'||tab==='calendar'){
-    const path='/tasks/'+secId;
-    if(sseConnections['cur_'+secId])sseConnections['cur_'+secId].close();
-    const es=new EventSource(DB_URL+path+'.json?accept=text/event-stream');
-    es.addEventListener('put',()=>{if(secId===currentSection)renderContent();});
-    es.addEventListener('patch',()=>{if(secId===currentSection)renderContent();});
-    es.onerror=()=>{es.close();delete sseConnections['cur_'+secId];};
-    sseConnections['cur_'+secId]=es;
-  }
+function sseDuty(){
+  if(sseStreams['duty']){try{sseStreams['duty'].close();}catch(e){}}
+  const url=DB+'/duty.json?accept=text%2Fevent-stream';
+  const es=new EventSource(url);
+  es.addEventListener('put',()=>{const sec=sections.find(s=>s.id===curSec);if(sec?.isDuty)renderC();});
+  es.addEventListener('patch',()=>{const sec=sections.find(s=>s.id===curSec);if(sec?.isDuty)renderC();});
+  es.onerror=()=>{};
+  sseStreams['duty']=es;
 }
 
-function stopAllListeners(){
-  Object.values(sseConnections).forEach(es=>{try{es.close();}catch(e){}});
-  sseConnections={};sseTaskCounts={};
-}
+function stopAllSSE(){Object.values(sseStreams).forEach(es=>{try{es.close();}catch(e){}});sseStreams={};}
 
-// Push notification (Web Notifications API)
-function triggerPushNotification(msg){
+// ── PUSH NOTIFICATIONS ──
+function reqNotifPerm(){if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();}
+function sendPush(title,body){
   if(!('Notification' in window))return;
-  if(Notification.permission==='granted'){new Notification('БОРТ',{body:msg,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">⚓</text></svg>'});}
-  else if(Notification.permission!=='denied'){Notification.requestPermission().then(p=>{if(p==='granted')new Notification('БОРТ',{body:msg});});}
-}
-
-function requestNotificationPermission(){
-  if('Notification' in window&&Notification.permission==='default'){
-    Notification.requestPermission();
+  if(Notification.permission==='granted'){
+    try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">⚓</text></svg>'});}catch(e){}
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════════════
-function openSettings(){
-  const b=document.getElementById('settings-body');b.innerHTML='';
-  if(isCapUser())buildCapSettings(b);else buildUserSettings(b);
-  openModal('modal-settings');
-}
-function buildUserSettings(b){
-  b.innerHTML=`<div class="modal-title">⚙️ Настройки</div>
-    <div class="modal-sub">Сменить пароль</div>
-    <input class="modal-inp" id="up1" type="password" placeholder="Новый пароль">
-    <input class="modal-inp" id="up2" type="password" placeholder="Повторите" style="margin-top:8px">
-    <button class="mbtn" onclick="changePass('up1','up2','umsg')">СМЕНИТЬ ПАРОЛЬ</button>
-    <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
-    <div class="modal-msg" id="umsg"></div>`;
-}
-function buildCapSettings(b){
-  b.innerHTML=`<div class="modal-title">⚓ Настройки Капитана</div>
-    <div class="modal-sub">Сменить пароль</div>
-    <input class="modal-inp" id="cp1" type="password" placeholder="Новый пароль">
-    <input class="modal-inp" id="cp2" type="password" placeholder="Повторите" style="margin-top:8px">
-    <button class="mbtn" onclick="changePass('cp1','cp2','cmsg')">СМЕНИТЬ ПАРОЛЬ</button>
-    <button class="mbtn neutral" style="margin-top:8px" onclick="closeModal('modal-settings');openManageSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
-    <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
-    <button class="mbtn danger" onclick="resetSessions()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ КРОМЕ ТЕКУЩЕЙ</button>
-    <div class="modal-msg" id="cmsg"></div>`;
-}
-async function changePass(id1,id2,msgId){
-  const p1=document.getElementById(id1).value,p2=document.getElementById(id2).value;
-  const msg=document.getElementById(msgId);
-  if(!p1||p1!==p2){msg.style.color='var(--red)';msg.textContent='Пароли не совпадают';return;}
-  await fbPatch('/accounts/'+CU.id,{passHash:hashPass(p1)});
-  CU.passHash=hashPass(p1);msg.style.color='var(--green)';msg.textContent='Пароль изменён';
-}
-async function resetSessions(){
-  // Remove all sessions except current device
-  await fbSet('/sessions',{[DID]:CU.id});
-  localStorage.setItem('__session',CU.id);
-  document.getElementById('cmsg').style.color='var(--green)';
-  document.getElementById('cmsg').textContent='Сессии сброшены';
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MANAGE SECTIONS
-// ═══════════════════════════════════════════════════════════════
-function openManageSecs(){
-  const list=document.getElementById('manage-list');list.innerHTML='';
-  sections.forEach(sec=>{
-    const item=document.createElement('div');item.className='sec-manage-item';
-    const name=document.createElement('div');name.className='smi-name';name.textContent=sec.name;
-    const actions=document.createElement('div');actions.className='smi-actions';
-    const editBtn=document.createElement('button');editBtn.className='smi-btn';editBtn.textContent='Доступ';
-    editBtn.onclick=()=>{closeModal('modal-manage-secs');openEditSec(sec);};
-    actions.appendChild(editBtn);
-    // Can delete only custom (non-default) sections
-    const isDefault=DEFAULT_SECTIONS.some(d=>d.id===sec.id);
-    if(!isDefault){
-      const delBtn=document.createElement('button');delBtn.className='smi-btn del';delBtn.textContent='Удалить';
-      delBtn.onclick=async()=>{
-        await fbDelete('/sections/'+sec.id);
-        sections=sections.filter(s=>s.id!==sec.id);
-        closeModal('modal-manage-secs');renderSectionsBar();showToast('Раздел удалён');
-      };actions.appendChild(delBtn);
-    }
-    item.appendChild(name);item.appendChild(actions);list.appendChild(item);
-  });
-  openModal('modal-manage-secs');
-}
-function buildNewSecForm(){
-  document.getElementById('ns-name').value='';
-  buildCBList('ns-edit',[]);buildCBList('ns-view',[]);
-}
-function openEditSec(sec){
-  editSecId=sec.id;
-  document.getElementById('es-title').textContent='Настройка: '+sec.name;
-  buildCBList('es-edit',sec.editRoles||[]);buildCBList('es-view',sec.viewRoles||[]);
-  openModal('modal-edit-sec');
-}
-function buildCBList(containerId,checked){
-  const c=document.getElementById(containerId);c.innerHTML='';
-  ALL_ROLES.forEach(role=>{
-    const item=document.createElement('div');item.className='access-item';
-    const cb=document.createElement('input');cb.type='checkbox';cb.id=containerId+'_'+role.replace(/\s/g,'_');cb.value=role;cb.checked=checked.includes(role);
-    const lbl=document.createElement('label');lbl.htmlFor=cb.id;lbl.textContent=role;
-    item.appendChild(cb);item.appendChild(lbl);c.appendChild(item);
-    item.onclick=e=>{if(e.target!==cb)cb.checked=!cb.checked;};
-  });
-}
-async function submitNewSec(){
-  const name=document.getElementById('ns-name').value.trim();if(!name)return;
-  const editRoles=[...document.querySelectorAll('#ns-edit input:checked')].map(c=>c.value);
-  const viewRoles=[...document.querySelectorAll('#ns-view input:checked')].map(c=>c.value);
-  const id='sec_'+Date.now();const sec={id,name,editRoles,viewRoles};
-  await fbSet('/sections/'+id,sec);
-  sections.push(sec);closeModal('modal-new-sec');renderSectionsBar();showToast('Раздел создан');
-}
-async function submitEditSec(){
-  const editRoles=[...document.querySelectorAll('#es-edit input:checked')].map(c=>c.value);
-  const viewRoles=[...document.querySelectorAll('#es-view input:checked')].map(c=>c.value);
-  await fbPatch('/sections/'+editSecId,{editRoles,viewRoles});
-  const s=sections.find(s=>s.id===editSecId);if(s){s.editRoles=editRoles;s.viewRoles=viewRoles;}
-  closeModal('modal-edit-sec');renderSectionsBar();showToast('Сохранено');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SOUND
-// ═══════════════════════════════════════════════════════════════
+// ── SOUND ──
 function playSound(type){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -1108,21 +851,88 @@ function playSound(type){
   }catch(e){}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MODALS / VICTORY / TOAST
-// ═══════════════════════════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('touchstart',e=>{if(e.target===m)closeModal(m.id);});
-  m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);});
-});
-function showVictory(){document.getElementById('victory-overlay').classList.add('show');}
-function closeVictory(){document.getElementById('victory-overlay').classList.remove('show');}
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);
+// ── SETTINGS ──
+function openSettings(){
+  const b=document.getElementById('settings-body');b.innerHTML='';
+  if(isCap()){
+    b.innerHTML=`<div class="mtitle">⚓ Капитан</div><div class="msub">Сменить пароль</div>
+    <input class="minp" id="cp1" type="password" placeholder="Новый пароль">
+    <input class="minp" id="cp2" type="password" placeholder="Повторите" style="margin-top:8px">
+    <button class="mbtn" onclick="chPass('cp1','cp2','cmsg')">СМЕНИТЬ ПАРОЛЬ</button>
+    <button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
+    <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
+    <button class="mbtn danger" onclick="resetSess()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ</button>
+    <div class="mmsg" id="cmsg"></div>`;
+  }else{
+    b.innerHTML=`<div class="mtitle">⚙️ Настройки</div><div class="msub">Сменить пароль</div>
+    <input class="minp" id="up1" type="password" placeholder="Новый пароль">
+    <input class="minp" id="up2" type="password" placeholder="Повторите" style="margin-top:8px">
+    <button class="mbtn" onclick="chPass('up1','up2','umsg')">СМЕНИТЬ ПАРОЛЬ</button>
+    <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
+    <div class="mmsg" id="umsg"></div>`;
+  }
+  openM('m-settings');
 }
+async function chPass(id1,id2,msgId){
+  const p1=document.getElementById(id1).value,p2=document.getElementById(id2).value,msg=document.getElementById(msgId);
+  if(!p1||p1!==p2){msg.style.color='var(--red)';msg.textContent='Пароли не совпадают';return;}
+  await fbP('/accounts/'+CU.id,{passHash:hashP(p1)});CU.passHash=hashP(p1);msg.style.color='var(--green)';msg.textContent='Пароль изменён';
+}
+async function resetSess(){await fbS('/sessions',{[DID]:CU.id});const msg=document.getElementById('cmsg');msg.style.color='var(--green)';msg.textContent='Сессии сброшены';}
+
+// ── MANAGE SECTIONS ──
+function openManSecs(){
+  const list=document.getElementById('man-list');list.innerHTML='';
+  sections.forEach(sec=>{
+    const item=document.createElement('div');item.className='smi';
+    const nm=document.createElement('div');nm.className='smin';nm.textContent=sec.name;
+    const acts=document.createElement('div');acts.className='smia';
+    const eb=document.createElement('button');eb.className='smib';eb.textContent='Доступ';eb.onclick=()=>{closeM('m-mansecs');openEditSec(sec);};acts.appendChild(eb);
+    if(!DEFAULT_SECTIONS.some(d=>d.id===sec.id)){
+      const db=document.createElement('button');db.className='smib del';db.textContent='Удалить';
+      db.onclick=async()=>{await fbD('/sections/'+sec.id);sections=sections.filter(s=>s.id!==sec.id);closeM('m-mansecs');renderSBar();showToast('Удалено');};acts.appendChild(db);
+    }
+    item.appendChild(nm);item.appendChild(acts);list.appendChild(item);
+  });
+  openM('m-mansecs');
+}
+function buildNewSecForm(){document.getElementById('ns-name').value='';buildCBs('ns-edit',[]);buildCBs('ns-view',[]);}
+function openEditSec(sec){editSecId=sec.id;document.getElementById('es-title').textContent='Настройка: '+sec.name;buildCBs('es-edit',sec.editRoles||[]);buildCBs('es-view',sec.viewRoles||[]);openM('m-editsec');}
+function buildCBs(cid,checked){
+  const c=document.getElementById(cid);c.innerHTML='';
+  ALL_ROLES.forEach(role=>{
+    const item=document.createElement('div');item.className='aitem';
+    const cb=document.createElement('input');cb.type='checkbox';cb.id=cid+'_'+role.replace(/\s/g,'_');cb.value=role;cb.checked=checked.includes(role);
+    const lbl=document.createElement('label');lbl.htmlFor=cb.id;lbl.textContent=role;
+    item.appendChild(cb);item.appendChild(lbl);c.appendChild(item);item.onclick=e=>{if(e.target!==cb)cb.checked=!cb.checked;};
+  });
+}
+async function submitNewSec(){
+  const name=document.getElementById('ns-name').value.trim();if(!name)return;
+  const editRoles=[...document.querySelectorAll('#ns-edit input:checked')].map(c=>c.value);
+  const viewRoles=[...document.querySelectorAll('#ns-view input:checked')].map(c=>c.value);
+  const id='sec_'+Date.now();const sec={id,name,editRoles,viewRoles,order:sections.length+1};
+  await fbS('/sections/'+id,sec);sections.push(sec);sections.sort((a,b)=>(a.order||99)-(b.order||99));
+  closeM('m-newsec');renderSBar();showToast('Раздел создан');
+}
+async function submitEditSec(){
+  const editRoles=[...document.querySelectorAll('#es-edit input:checked')].map(c=>c.value);
+  const viewRoles=[...document.querySelectorAll('#es-view input:checked')].map(c=>c.value);
+  await fbP('/sections/'+editSecId,{editRoles,viewRoles});
+  const s=sections.find(s=>s.id===editSecId);if(s){s.editRoles=editRoles;s.viewRoles=viewRoles;}
+  closeM('m-editsec');renderSBar();showToast('Сохранено');
+}
+
+// ── MODALS ──
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.moverlay').forEach(m=>{
+  m.addEventListener('touchstart',e=>{if(e.target===m)closeM(m.id);});
+  m.addEventListener('click',e=>{if(e.target===m)closeM(m.id);});
+});
+
+// ── TOAST ──
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
 
 init();
 </script>
