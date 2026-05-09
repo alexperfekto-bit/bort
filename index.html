@@ -415,7 +415,7 @@ const LOCAL_VER = '2.1';
   }
 })();
 
-let DB_URL = localStorage.getItem('__dburl')||'';
+let DB_URL = 'https://bort-30052-default-rtdb.firebaseio.com';
 // Firebase REST helpers
 async function fbGet(path){
   const r=await fetch(DB_URL+path+'.json');
@@ -468,7 +468,6 @@ let prevTaskCounts={};
 // ═══════════════════════════════════════════════════════════════
 async function init(){
   showScreen('screen-splash');
-  if(!DB_URL){showScreen('screen-config');return;}
   // Try resume session
   const sessAccId=localStorage.getItem('__session');
   if(sessAccId){
