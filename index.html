@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Капитан — Борт задач</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Unbounded:wght@300;400;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c10;--surface:#111318;--surface2:#1a1d25;--border:#2a2d35;
+  --text:#e8eaf0;--dim:#6b6e7a;--gold:#f5c842;--bronze:#cd7f32;
+  --green:#3ddc84;--red:#ff4757;--blue:#4a9eff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:1;transition:transform .35s cubic-bezier(.77,0,.18,1),opacity .3s;}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none;}
+
+/* ONBOARDING */
+#screen-onboard{justify-content:center;align-items:center;padding:32px 24px;gap:20px;background:radial-gradient(ellipse at 50% 80%,rgba(245,200,66,.08) 0%,transparent 70%),var(--bg);}
+.onboard-logo{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--gold);letter-spacing:6px;text-shadow:0 0 40px rgba(245,200,66,.4);line-height:1;}
+.onboard-sub{font-size:12px;color:var(--dim);letter-spacing:4px;text-transform:uppercase;}
+.onboard-form{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;margin-top:8px;}
+.onboard-hint{font-size:12px;color:var(--dim);text-align:center;letter-spacing:.5px;}
+.inp{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;transition:border .2s;width:100%;}
+.inp:focus{border-color:var(--gold);}
+.inp::placeholder{color:var(--dim);}
+select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+.btn-gold{background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:14px;font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;width:100%;}
+.btn-gold:active{transform:scale(.97);}
+
+/* AUTH */
+#screen-captain-auth{justify-content:center;align-items:center;padding:32px 24px;gap:20px;background:radial-gradient(ellipse at 50% 60%,rgba(245,200,66,.1) 0%,transparent 70%),var(--bg);}
+.auth-title{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:4px;}
+.auth-sub{font-size:11px;color:var(--dim);letter-spacing:3px;text-align:center;}
+.auth-form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;}
+.back-btn{position:absolute;top:56px;left:20px;background:none;border:none;color:var(--dim);font-size:22px;cursor:pointer;padding:8px;}
+
+/* HEADER */
+#screen-main{background:var(--bg);}
+.header{padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);letter-spacing:3px;flex-shrink:0;}
+.header-right{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;}
+.user-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.user-info{display:flex;flex-direction:column;align-items:flex-end;min-width:0;overflow:hidden;}
+.user-name{font-size:11px;font-weight:600;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-name.captain{color:var(--gold);}
+.user-name.crew{color:var(--bronze);}
+.user-role-lbl{font-size:9px;color:var(--dim);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Settings gear — separate, not overlapping */
+.captain-gear{background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;}
+
+/* PROGRESS */
+.progress-wrap{padding:0 20px 20px;}
+.progress-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.progress-label .plbl{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.progress-label .pct{color:var(--gold);font-weight:700;font-size:13px;}
+/* Track: right padding = 0, hookah is BELOW the bar, not on it */
+.progress-track{position:relative;height:8px;background:var(--surface2);border-radius:99px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#b08010 0%,var(--gold) 100%);border-radius:99px;transition:width .5s cubic-bezier(.77,0,.18,1);max-width:100%;}
+/* Hookah sits BELOW and to the right of the bar, no overlap with % */
+.hookah-anchor{display:flex;justify-content:flex-end;margin-top:6px;padding-right:0;}
+.hookah-mini{width:44px;height:60px;}
+.hookah-mini svg{width:100%;height:100%;}
+
+.crew-progress-wrap{padding:0 20px 14px;}
+.crew-progress-track{position:relative;height:6px;background:var(--surface2);border-radius:99px;margin-right:32px;}
+.crew-progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),#88ddff);border-radius:99px;transition:width .5s cubic-bezier(.77,0,.18,1);}
+.crew-bed{position:absolute;right:-30px;top:50%;transform:translateY(-50%);font-size:22px;}
+
+/* SECTIONS */
+.sections-bar{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;flex-shrink:0;}
+.sections-bar::-webkit-scrollbar{display:none;}
+.sec-tab{flex-shrink:0;padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:99px;font-size:11px;font-family:'Unbounded',sans-serif;font-weight:400;color:var(--dim);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.sec-tab.active{background:var(--surface2);border-color:var(--gold);color:var(--gold);}
+.sec-tab.add-sec{border-style:dashed;}
+
+/* NAV TABS */
+.nav-tabs{display:flex;padding:0 16px;gap:8px;margin-bottom:4px;}
+.tab{flex:1;padding:10px 4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--dim);text-align:center;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.tab.active{background:var(--gold);color:#0a0c10;border-color:var(--gold);}
+
+/* NO SECTION */
+.select-prompt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.sp-icon{font-size:44px;opacity:.3;}
+.sp-text{font-family:'Unbounded',sans-serif;font-size:12px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+
+/* CONTENT */
+.content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 100px;-webkit-overflow-scrolling:touch;}
+.content-area::-webkit-scrollbar{display:none;}
+
+/* DATE */
+.date-header{padding:12px 4px 10px;}
+.date-big{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;}
+.date-sub{font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+
+/* TASK */
+.task-item{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;}
+.task-swipe-bg{position:absolute;inset:0;background:linear-gradient(90deg,var(--green),#00ff88);border-radius:14px;opacity:0;display:flex;align-items:center;padding-left:20px;}
+.task-swipe-bg .ci{font-size:20px;color:#fff;}
+.task-content{position:relative;z-index:1;background:var(--surface);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transform:translateX(0);}
+.task-content.greening{background:color-mix(in srgb,var(--green) var(--gp,0%),var(--surface));}
+.task-row{display:flex;align-items:flex-start;gap:8px;}
+.task-text{flex:1;font-size:14px;line-height:1.5;color:var(--text);word-break:break-word;min-height:20px;}
+.task-text[contenteditable="true"]{outline:none;}
+.task-text[contenteditable="true"]:empty::before{content:attr(data-ph);color:var(--dim);}
+/* Save button — big green pill */
+.save-btn{display:none;align-items:center;justify-content:center;gap:6px;background:var(--green);color:#0a0c10;border:none;border-radius:10px;padding:10px 16px;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;margin-top:4px;width:100%;}
+.save-btn.show{display:flex;}
+.del-btn{background:none;border:none;color:var(--dim);font-size:18px;padding:2px 4px;cursor:pointer;opacity:.4;flex-shrink:0;line-height:1;}
+/* META */
+.task-meta{display:flex;flex-direction:column;gap:3px;}
+.meta-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.meta-bot{font-size:9px;color:var(--dim);letter-spacing:.4px;}
+.author-badge{font-size:9px;font-weight:600;letter-spacing:1px;padding:2px 8px;border-radius:99px;border:1px solid;white-space:nowrap;}
+.author-badge.captain{color:var(--gold);border-color:rgba(245,200,66,.3);background:rgba(245,200,66,.08);}
+.author-badge.crew{color:var(--bronze);border-color:rgba(205,127,50,.3);background:rgba(205,127,50,.08);}
+.role-lbl{font-size:9px;color:var(--dim);}
+
+/* ADD */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--surface2);border:1px dashed var(--border);border-radius:14px;cursor:pointer;color:var(--dim);font-size:13px;font-family:'Unbounded',sans-serif;font-weight:300;letter-spacing:1px;transition:all .2s;margin-top:4px;}
+.add-btn:active{background:var(--surface);border-color:var(--gold);color:var(--gold);}
+
+/* CALENDAR */
+.calendar-wrap{padding:8px 0;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:12px;}
+.cal-month{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;}
+.cal-nav{background:none;border:none;color:var(--text);font-size:20px;padding:8px;cursor:pointer;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dn{text-align:center;font-size:9px;letter-spacing:1px;color:var(--dim);padding:4px 0;font-weight:600;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;position:relative;}
+.cal-day:empty{pointer-events:none;}
+.cal-day.today{background:var(--gold);color:#0a0c10;font-weight:700;}
+.cal-day.has-tasks::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--blue);}
+.cal-day.today.has-tasks::after{background:#0a0c10;}
+.cal-day:active:not(:empty){background:var(--surface2);}
+.cal-day.selected:not(.today){background:var(--surface2);border:1px solid var(--gold);color:var(--gold);}
+.sec-sep{height:1px;background:var(--border);margin:4px 0 12px;}
+
+/* DONE */
+.done-date-sep{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:16px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:8px;font-family:'Unbounded',sans-serif;font-weight:300;}
+.done-item{position:relative;background:#15181e;border:1px solid #1e2128;border-radius:14px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;}
+.done-swipe-bg{position:absolute;inset:0;background:linear-gradient(90deg,#2a3d2a,#3a5a3a);border-radius:14px;display:flex;align-items:center;padding-left:20px;}
+.done-content{position:relative;z-index:1;background:#15181e;border-radius:14px;padding:12px 14px;transform:translateX(0);display:flex;flex-direction:column;gap:8px;}
+.done-text{font-size:14px;color:var(--dim);text-decoration:line-through;line-height:1.4;word-break:break-word;}
+.done-meta{display:flex;flex-direction:column;gap:4px;}
+.done-meta-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.done-meta-bot{font-size:9px;color:#42454f;letter-spacing:.4px;}
+.done-sec-badge{font-size:9px;color:var(--dim);border:1px solid #2a2d35;border-radius:99px;padding:1px 8px;white-space:nowrap;}
+.revert-hint{color:#4a7a4a;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;transform:translateY(100%);transition:transform .35s cubic-bezier(.77,0,.18,1);max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal-sheet{transform:translateY(0);}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 20px;}
+.modal-title{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;}
+.modal-sub{font-size:11px;color:var(--dim);margin-bottom:12px;letter-spacing:.5px;}
+.modal-inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:15px;outline:none;margin-bottom:12px;}
+.modal-inp:focus{border-color:var(--gold);}
+select.modal-inp{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6e7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;background-color:var(--bg);}
+.modal-btn{width:100%;background:var(--gold);color:#0a0c10;border:none;border-radius:12px;padding:14px;font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;}
+.modal-btn.danger{background:var(--surface2);color:var(--red);border:1px solid var(--red);margin-top:10px;}
+/* Access control checkboxes */
+.access-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.access-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;}
+.access-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.access-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
+
+/* VICTORY CAPTAIN */
+#victory-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;overflow:hidden;}
+#victory-overlay.show{opacity:1;pointer-events:all;}
+.v-scene{position:relative;width:200px;height:300px;display:flex;align-items:flex-end;justify-content:center;}
+.v-hookah-svg{width:180px;height:270px;}
+.v-smoke{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:180px;pointer-events:none;}
+.smoke-b{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(215,215,215,.5),rgba(160,160,160,.1) 55%,transparent 75%);animation:brise 4s ease-out infinite;}
+.smoke-b:nth-child(1){width:32px;height:32px;left:24px;animation-delay:0s;}
+.smoke-b:nth-child(2){width:48px;height:48px;left:14px;animation-delay:1s;}
+.smoke-b:nth-child(3){width:38px;height:38px;left:36px;animation-delay:2s;}
+.smoke-b:nth-child(4){width:26px;height:26px;left:50px;animation-delay:3s;}
+@keyframes brise{0%{bottom:0;opacity:0;transform:scale(.3);}10%{opacity:.65;}70%{opacity:.2;}100%{bottom:175px;opacity:0;transform:scale(3) translateX(8px);}}
+.v-text{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:3px;text-align:center;margin-top:12px;line-height:1.35;padding:0 20px;}
+.v-close{margin-top:24px;background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.3);border-radius:99px;padding:10px 28px;font-family:'Unbounded',sans-serif;font-size:10px;letter-spacing:2px;cursor:pointer;}
+
+/* CREW VICTORY */
+#crew-victory-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;}
+#crew-victory-overlay.show{opacity:1;pointer-events:all;}
+.cv-bed{font-size:100px;animation:bbed 1.5s ease-in-out infinite;}
+@keyframes bbed{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.cv-text{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue);letter-spacing:3px;text-align:center;margin-top:16px;line-height:1.3;padding:0 24px;}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:10px 20px;font-size:12px;letter-spacing:1px;color:var(--text);opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.empty-state{text-align:center;padding:48px 24px;color:var(--dim);}
+.empty-state .ei{font-size:48px;margin-bottom:16px;opacity:.5;}
+.empty-state p{font-size:13px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div class="screen" id="screen-onboard">
+  <div class="onboard-logo">БОРТ</div>
+  <div class="onboard-sub">Система управления задачами</div>
+  <div class="onboard-form">
+    <div class="onboard-hint">Первый вход — представьтесь экипажу</div>
+    <input class="inp" id="ob-name" placeholder="Ваше имя" autocomplete="off">
+    <select class="inp" id="ob-role">
+      <option value="" disabled selected>Выберите должность</option>
+      <option value="Старший помощник">Старший помощник</option>
+      <option value="Второй помощник">Второй помощник</option>
+      <option value="Матрос">Матрос</option>
+      <option value="Старший механик">Старший механик</option>
+      <option value="Второй механик">Второй механик</option>
+      <option value="Старшая стюардесса">Старшая стюардесса</option>
+      <option value="Стюардесса">Стюардесса</option>
+      <option value="Шеф-повар">Шеф-повар</option>
+      <option value="Повар на экипаж">Повар на экипаж</option>
+    </select>
+    <button class="btn-gold" id="ob-submit">НА БОРТ</button>
+  </div>
+</div>
+
+<!-- CAPTAIN AUTH -->
+<div class="screen hidden" id="screen-captain-auth">
+  <button class="back-btn" id="auth-back">←</button>
+  <div class="auth-title">⚓ КАПИТАН</div>
+  <div class="auth-sub" id="auth-sub-text">Введите пароль капитана</div>
+  <div class="auth-form">
+    <input class="inp" id="auth-password" type="password" placeholder="Пароль" autocomplete="off">
+    <div id="auth-new-wrap" style="display:none;margin-top:2px">
+      <input class="inp" id="auth-password2" type="password" placeholder="Повторите пароль" autocomplete="off">
+    </div>
+    <button class="btn-gold" id="auth-submit" style="margin-top:4px">ВОЙТИ</button>
+    <div id="auth-error" style="font-size:12px;color:var(--red);text-align:center;min-height:18px;margin-top:4px"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="screen hidden" id="screen-main">
+  <div class="header">
+    <div class="header-title" id="main-title">БОРТ</div>
+    <div class="header-right">
+      <div class="user-dot"></div>
+      <div class="user-info">
+        <div class="user-name" id="badge-name">...</div>
+        <div class="user-role-lbl" id="badge-role"></div>
+      </div>
+      <button class="captain-gear hidden" id="cap-gear-btn">⚙️</button>
+    </div>
+  </div>
+
+  <!-- Captain progress -->
+  <div id="cap-progress" style="display:none;padding:0 20px 8px;">
+    <div class="progress-label">
+      <span class="plbl">ВЫПОЛНЕНО СЕГОДНЯ</span>
+      <span class="pct" id="cap-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="cap-fill" style="width:0%"></div>
+    </div>
+    <!-- Hookah BELOW bar, right-aligned, no overlap -->
+    <div class="hookah-anchor">
+      <div class="hookah-mini">
+        <!-- Realistic single-hose hookah SVG: crystal vase, metal stem, beige bowl, brown hose -->
+        <svg viewBox="0 0 54 76" xmlns="http://www.w3.org/2000/svg">
+          <!-- Wooden base disc -->
+          <ellipse cx="27" cy="70" rx="22" ry="5" fill="#4a2e14" stroke="#3a2010" stroke-width=".8"/>
+          <ellipse cx="27" cy="68" rx="22" ry="4.5" fill="#5c3a1a" stroke="#3a2010" stroke-width=".8"/>
+          <!-- Wood grain lines -->
+          <line x1="8" y1="68" x2="12" y2="70" stroke="#3a2010" stroke-width=".4" opacity=".4"/>
+          <line x1="14" y1="67" x2="20" y2="71" stroke="#3a2010" stroke-width=".4" opacity=".3"/>
+          <line x1="32" y1="67" x2="38" y2="71" stroke="#3a2010" stroke-width=".4" opacity=".3"/>
+          <line x1="42" y1="68" x2="46" y2="70" stroke="#3a2010" stroke-width=".4" opacity=".4"/>
+          <!-- Crystal/glass vase base (wide flat base) -->
+          <ellipse cx="27" cy="64" rx="14" ry="3.5" fill="rgba(160,200,220,.35)" stroke="rgba(180,220,240,.5)" stroke-width=".8"/>
+          <!-- Crystal vase body — faceted glass look -->
+          <path d="M13 64 Q11 55 14 44 Q17 34 27 31 Q37 34 40 44 Q43 55 41 64 Z" fill="rgba(140,185,210,.2)" stroke="rgba(180,220,240,.45)" stroke-width="1"/>
+          <!-- Facet highlights -->
+          <path d="M16 62 Q14 53 17 43 Q19 37 24 34" stroke="rgba(220,240,255,.35)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+          <path d="M30 32 Q35 36 37 44 Q39 53 38 62" stroke="rgba(220,240,255,.2)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+          <!-- Inner liquid reflection -->
+          <ellipse cx="27" cy="56" rx="9" ry="5" fill="rgba(100,160,200,.12)"/>
+          <!-- Metal connector ring at top of vase -->
+          <ellipse cx="27" cy="31" rx="5.5" ry="2" fill="#2a2a2a" stroke="#555" stroke-width=".8"/>
+          <!-- Metal stem / shaft -->
+          <rect x="25.2" y="12" width="3.6" height="20" rx="1.5" fill="url(#metalGrad)" stroke="#444" stroke-width=".5"/>
+          <!-- Tray / plate -->
+          <ellipse cx="27" cy="14" rx="12" ry="2.5" fill="#1e1e1e" stroke="#666" stroke-width=".8"/>
+          <ellipse cx="27" cy="13.2" rx="11" ry="2" fill="#252525"/>
+          <!-- Bowl (clay/beige colored) -->
+          <path d="M20 13 Q20 5 27 4 Q34 5 34 13 Z" fill="#c8a882" stroke="#b09070" stroke-width=".8"/>
+          <ellipse cx="27" cy="13" rx="7" ry="2.5" fill="#b09070"/>
+          <!-- Bowl top opening -->
+          <ellipse cx="27" cy="5" rx="4.5" ry="2" fill="#9a7855"/>
+          <!-- Hose port on vase (left side) -->
+          <circle cx="19" cy="50" r="2.5" fill="#1e1e1e" stroke="#555" stroke-width=".8"/>
+          <!-- Brown silicone hose - curves around and forward -->
+          <path d="M19 50 Q8 50 4 58 Q0 66 8 72" fill="none" stroke="#5a2e10" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M19 50 Q8 50 4 58 Q0 66 8 72" fill="none" stroke="#7a4020" stroke-width="3" stroke-linecap="round"/>
+          <!-- Mouthpiece metal tip -->
+          <rect x="5" y="70.5" width="9" height="3" rx="1.5" fill="#7a5535" stroke="#5a3a20" stroke-width=".5"/>
+          <rect x="5.5" y="71" width="2.5" height="2" rx="1" fill="#9a7050"/>
+          <defs>
+            <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#333"/>
+              <stop offset="40%" stop-color="#666"/>
+              <stop offset="60%" stop-color="#888"/>
+              <stop offset="100%" stop-color="#444"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crew progress -->
+  <div id="crew-progress" style="display:none;padding:0 20px 14px;">
+    <div class="progress-label" style="padding:0 4px">
+      <span class="plbl" style="font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase">Выполнено сегодня</span>
+      <span class="pct" id="crew-pct" style="color:var(--blue)">0%</span>
+    </div>
+    <div class="crew-progress-track">
+      <div class="crew-progress-fill" id="crew-fill" style="width:0%"></div>
+      <div class="crew-bed">🛏️</div>
+    </div>
+  </div>
+
+  <div class="sections-bar" id="sections-bar"></div>
+
+  <div class="nav-tabs" id="nav-tabs" style="display:none">
+    <div class="tab active" data-tab="today">Сегодня</div>
+    <div class="tab" data-tab="tomorrow">Завтра</div>
+    <div class="tab" data-tab="calendar">Календарь</div>
+    <div class="tab" data-tab="done">Выполнено</div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="select-prompt" id="select-prompt">
+      <div class="sp-icon">⚓</div>
+      <div class="sp-text">Выберите раздел</div>
+    </div>
+    <div class="content-area" id="content-area" style="display:none"></div>
+  </div>
+</div>
+
+<!-- MODAL: New Section (captain) -->
+<div class="modal-overlay" id="modal-new-section">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Новый раздел</div>
+    <input class="modal-inp" id="new-sec-name" placeholder="Название раздела">
+    <div class="modal-sub">Доступ для должностей:</div>
+    <div class="access-list" id="new-sec-access"></div>
+    <button class="modal-btn" id="new-sec-submit">СОЗДАТЬ</button>
+  </div>
+</div>
+
+<!-- MODAL: Edit Section Access -->
+<div class="modal-overlay" id="modal-edit-access">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="edit-access-title">Доступ к разделу</div>
+    <div class="modal-sub">Должности с доступом:</div>
+    <div class="access-list" id="edit-sec-access"></div>
+    <button class="modal-btn" id="edit-access-submit">СОХРАНИТЬ</button>
+  </div>
+</div>
+
+<!-- MODAL: Captain Settings -->
+<div class="modal-overlay" id="modal-captain-settings">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚓ Настройки Капитана</div>
+    <div class="modal-sub">Сменить пароль</div>
+    <input class="modal-inp" id="cap-new-pass" type="password" placeholder="Новый пароль">
+    <input class="modal-inp" id="cap-new-pass2" type="password" placeholder="Повторите пароль" style="margin-top:8px">
+    <button class="modal-btn" id="cap-change-btn">СМЕНИТЬ ПАРОЛЬ</button>
+    <button class="modal-btn danger" id="cap-reset-btn">СБРОСИТЬ ВСЕ УСТРОЙСТВА КРОМЕ ТЕКУЩЕГО</button>
+    <div id="cap-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:18px"></div>
+  </div>
+</div>
+
+<!-- VICTORY CAPTAIN -->
+<div id="victory-overlay">
+  <div class="v-scene">
+    <div class="v-smoke">
+      <div class="smoke-b"></div><div class="smoke-b"></div>
+      <div class="smoke-b"></div><div class="smoke-b"></div>
+    </div>
+    <!-- Large realistic hookah for victory screen -->
+    <svg class="v-hookah-svg" viewBox="0 0 110 160" xmlns="http://www.w3.org/2000/svg">
+      <!-- Wooden base -->
+      <ellipse cx="55" cy="148" rx="44" ry="9" fill="#4a2e14" stroke="#3a2010" stroke-width="1"/>
+      <ellipse cx="55" cy="145" rx="44" ry="8.5" fill="#5c3a1a" stroke="#3a2010" stroke-width="1"/>
+      <line x1="18" y1="144" x2="25" y2="148" stroke="#3a2010" stroke-width=".7" opacity=".4"/>
+      <line x1="30" y1="143" x2="40" y2="149" stroke="#3a2010" stroke-width=".7" opacity=".3"/>
+      <line x1="68" y1="143" x2="78" y2="149" stroke="#3a2010" stroke-width=".7" opacity=".3"/>
+      <line x1="84" y1="144" x2="92" y2="148" stroke="#3a2010" stroke-width=".7" opacity=".4"/>
+      <!-- Glass vase flat base -->
+      <ellipse cx="55" cy="138" rx="28" ry="7" fill="rgba(150,195,215,.3)" stroke="rgba(180,220,240,.4)" stroke-width="1"/>
+      <!-- Crystal vase body -->
+      <path d="M27 138 Q23 118 28 96 Q33 76 55 70 Q77 76 82 96 Q87 118 83 138 Z" fill="rgba(130,180,210,.18)" stroke="rgba(180,220,240,.4)" stroke-width="1.2"/>
+      <!-- Facets -->
+      <path d="M32 134 Q28 114 33 93 Q37 79 48 73" stroke="rgba(220,240,255,.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M60 71 Q72 77 76 94 Q80 114 78 134" stroke="rgba(220,240,255,.18)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M42 136 Q39 116 42 96 Q45 83 52 75" stroke="rgba(220,240,255,.15)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <!-- Inner liquid glow -->
+      <ellipse cx="55" cy="118" rx="19" ry="11" fill="rgba(90,150,195,.1)"/>
+      <!-- Metal connector -->
+      <ellipse cx="55" cy="70" rx="11" ry="4" fill="#252525" stroke="#666" stroke-width="1"/>
+      <!-- Metal stem -->
+      <rect x="51.5" y="24" width="7" height="48" rx="3" fill="url(#vMetalGrad)" stroke="#555" stroke-width=".8"/>
+      <!-- Tray / plate -->
+      <ellipse cx="55" cy="28" rx="26" ry="5.5" fill="#1e1e1e" stroke="#666" stroke-width="1"/>
+      <ellipse cx="55" cy="26" rx="24" ry="4.5" fill="#252525"/>
+      <!-- Clay bowl -->
+      <path d="M40 26 Q40 8 55 6 Q70 8 70 26 Z" fill="#c8a882" stroke="#b09070" stroke-width="1"/>
+      <ellipse cx="55" cy="26" rx="15" ry="5.5" fill="#b09070"/>
+      <ellipse cx="55" cy="8" rx="10" ry="4" fill="#9a7855"/>
+      <!-- Hose port -->
+      <circle cx="35" cy="106" r="5.5" fill="#1e1e1e" stroke="#555" stroke-width="1"/>
+      <!-- Brown silicone hose -->
+      <path d="M35 106 Q12 104 6 122 Q0 140 16 150" fill="none" stroke="#5a2e10" stroke-width="9" stroke-linecap="round"/>
+      <path d="M35 106 Q12 104 6 122 Q0 140 16 150" fill="none" stroke="#7a4020" stroke-width="6" stroke-linecap="round"/>
+      <path d="M35 106 Q12 104 6 122 Q0 140 16 150" fill="none" stroke="#8a5030" stroke-width="3" stroke-linecap="round" stroke-dasharray="5,4"/>
+      <!-- Metal mouthpiece -->
+      <rect x="10" y="148" width="18" height="6" rx="3" fill="#7a5535" stroke="#5a3a20" stroke-width=".8"/>
+      <rect x="11" y="149" width="5" height="4" rx="2" fill="#9a7050"/>
+      <defs>
+        <linearGradient id="vMetalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#333"/>
+          <stop offset="35%" stop-color="#777"/>
+          <stop offset="55%" stop-color="#999"/>
+          <stop offset="100%" stop-color="#444"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="v-text">СКИДУЙ ТЕЛЬНЯХУ<br>И ГАЗУЙ НА ЧАХУ</div>
+  <button class="v-close" onclick="closeVictory()">ЗАКРЫТЬ</button>
+</div>
+
+<!-- CREW VICTORY -->
+<div id="crew-victory-overlay">
+  <div class="cv-bed">🛏️</div>
+  <div class="cv-text">ТЕПЕРЬ МОЖЕШЬ<br>ПОСПАТЬ</div>
+  <button class="v-close" onclick="closeCrewVictory()">ЗАКРЫТЬ</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────
+const ALL_ROLES = [
+  'Старший помощник','Второй помощник','Матрос',
+  'Старший механик','Второй механик',
+  'Старшая стюардесса','Стюардесса',
+  'Шеф-повар','Повар на экипаж'
+];
+
+// Default sections with role access
+const DEFAULT_SECTIONS = [
+  { id:'sec_starpom',  name:'Стар.пом',    roles:['Старший помощник','Второй помощник'] },
+  { id:'sec_matrosy',  name:'Матросы',     roles:['Матрос'] },
+  { id:'sec_mech',     name:'Механики',    roles:['Старший механик','Второй механик'] },
+  { id:'sec_stew',     name:'Стюардессы',  roles:['Старшая стюардесса','Стюардесса'] },
+  { id:'sec_chefs',    name:'Шеф-повара',  roles:['Шеф-повар','Повар на экипаж'] }
+];
+
+// ── STORAGE ───────────────────────────────────────────────────
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
+};
+
+// ── DEVICE ────────────────────────────────────────────────────
+function getDeviceId() {
+  let id = localStorage.getItem('__did');
+  if (!id) { id='dev_'+Date.now()+'_'+Math.random().toString(36).slice(2,10); localStorage.setItem('__did',id); }
+  return id;
+}
+const DID = getDeviceId();
+
+// ── STATE ─────────────────────────────────────────────────────
+let currentUser = S.get('user_profile'); // {name, role, deviceId}
+let currentSection = null;
+let currentTab = 'today';
+let calY, calM;
+let victorySeen = false;
+let crewVictorySeen = {};
+let editAccessSecId = null;
+
+// ── HELPERS ───────────────────────────────────────────────────
+function getSections() {
+  let secs = S.get('sections');
+  if (!secs) { secs = DEFAULT_SECTIONS; S.set('sections', secs); }
+  return secs;
+}
+function saveSections(a) { S.set('sections', a); }
+function dateStr(d) { d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr() { return dateStr(new Date()); }
+function tomorrowStr() { const d=new Date(); d.setDate(d.getDate()+1); return dateStr(d); }
+function getTasks(sec,date) { return S.get('tasks_'+sec+'_'+date)||[]; }
+function saveTasks(sec,date,tasks) { S.set('tasks_'+sec+'_'+date,tasks); }
+function getCapPass() { return localStorage.getItem('cap_pass'); }
+function setCapPass(p) { localStorage.setItem('cap_pass',p); }
+function getCapDevices() { return S.get('cap_devices')||[]; }
+function addCapDevice(id) { const d=getCapDevices(); if(!d.includes(id)){d.push(id);S.set('cap_devices',d);} }
+function resetCapDevices() { S.set('cap_devices',[DID]); }
+function isCapDev() { return getCapDevices().includes(DID); }
+function isCaptainSec() { return currentSection==='captain'; }
+function isActiveCaptain() { return isCaptainSec() && isCapDev(); }
+// After captain login, user acts as captain everywhere
+function isUserCaptain() { return isCapDev(); }
+function canEditTask(task) { return isUserCaptain() || task.authorDeviceId===DID; }
+function canRevertTask(task) { return isUserCaptain() || task.completedByDid===DID; }
+function formatTime(iso) { if(!iso)return'—'; const d=new Date(iso); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+
+// Get sections visible to current user
+function getVisibleSections() {
+  const secs = getSections();
+  if (isUserCaptain()) return secs; // captain sees all
+  if (!currentUser) return [];
+  const role = currentUser.role;
+  return secs.filter(s => !s.roles || s.roles.length===0 || s.roles.includes(role));
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+function init() {
+  if (!currentUser) { showScreen('screen-onboard'); return; }
+  showScreen('screen-main');
+  renderSectionsBar();
+  showNoSection();
+  updateBadge();
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('hidden');if(s.id!==id)s.classList.add('hidden');});
+}
+function showNoSection() {
+  currentSection=null;
+  document.getElementById('select-prompt').style.display='';
+  document.getElementById('content-area').style.display='none';
+  document.getElementById('nav-tabs').style.display='none';
+  document.getElementById('cap-progress').style.display='none';
+  document.getElementById('crew-progress').style.display='none';
+  document.getElementById('cap-gear-btn').classList.add('hidden');
+  document.getElementById('main-title').textContent='БОРТ';
+  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.remove('active'));
+  updateBadge();
+}
+
+// ── ONBOARDING ────────────────────────────────────────────────
+document.getElementById('ob-submit').onclick = () => {
+  const name = document.getElementById('ob-name').value.trim();
+  const role = document.getElementById('ob-role').value;
+  if (!name) { showToast('Введите имя'); return; }
+  if (!role) { showToast('Выберите должность'); return; }
+  currentUser = { name, role, deviceId: DID };
+  S.set('user_profile', currentUser);
+  showScreen('screen-main'); renderSectionsBar(); showNoSection(); updateBadge();
+};
+
+// ── BADGE ─────────────────────────────────────────────────────
+function updateBadge() {
+  if (!currentUser) return;
+  const nameEl = document.getElementById('badge-name');
+  const roleEl = document.getElementById('badge-role');
+  if (isUserCaptain()) {
+    nameEl.textContent='КАПИТАН'; nameEl.className='user-name captain';
+    roleEl.textContent='Капитан';
+  } else {
+    nameEl.textContent=currentUser.name.toUpperCase(); nameEl.className='user-name crew';
+    roleEl.textContent=currentUser.role;
+  }
+}
+
+// ── SECTIONS BAR ──────────────────────────────────────────────
+function renderSectionsBar() {
+  const bar = document.getElementById('sections-bar');
+  bar.innerHTML='';
+  // Captain tab
+  const cap=document.createElement('div');
+  cap.className='sec-tab'+(currentSection==='captain'?' active':'');
+  cap.dataset.sec='captain'; cap.textContent='⚓ Капитан';
+  cap.onclick=()=>clickSectionTab('captain');
+  bar.appendChild(cap);
+  // Visible sections
+  getVisibleSections().forEach(sec=>{
+    const el=document.createElement('div');
+    el.className='sec-tab'+(currentSection===sec.id?' active':'');
+    el.dataset.sec=sec.id; el.textContent=sec.name;
+    // Long press for captain to edit access
+    if (isUserCaptain()) {
+      let pressTimer;
+      el.addEventListener('touchstart',()=>{pressTimer=setTimeout(()=>{editAccessSecId=sec.id;openEditAccess(sec);},600);},{passive:true});
+      el.addEventListener('touchend',()=>clearTimeout(pressTimer));
+      el.addEventListener('touchmove',()=>clearTimeout(pressTimer));
+    }
+    el.onclick=()=>setSection(sec.id);
+    bar.appendChild(el);
+  });
+  // Add section (captain only)
+  if (isUserCaptain()) {
+    const add=document.createElement('div');
+    add.className='sec-tab add-sec'; add.textContent='+ Раздел';
+    add.onclick=()=>openNewSection();
+    bar.appendChild(add);
+  }
+}
+
+function clickSectionTab(secId) {
+  if (secId==='captain') {
+    if (!getCapPass()) { openCaptainAuth(true); return; }
+    if (!isCapDev()) { openCaptainAuth(false); return; }
+  }
+  setSection(secId);
+}
+
+function setSection(secId) {
+  currentSection=secId;
+  document.querySelectorAll('.sec-tab').forEach(t=>t.classList.toggle('active',t.dataset.sec===secId));
+  const isCap=secId==='captain';
+  document.getElementById('cap-progress').style.display=isCap?'':'none';
+  document.getElementById('crew-progress').style.display=isCap?'none':'';
+  document.getElementById('cap-gear-btn').classList.toggle('hidden',!(isCap&&isCapDev()));
+  const sec=getSections().find(s=>s.id===secId);
+  document.getElementById('main-title').textContent=isCap?'БОРТ':(sec?.name?.toUpperCase()||secId.toUpperCase());
+  document.getElementById('select-prompt').style.display='none';
+  document.getElementById('content-area').style.display='';
+  document.getElementById('nav-tabs').style.display='flex';
+  updateBadge(); setTab(currentTab);
+}
+
+// ── CAPTAIN AUTH ──────────────────────────────────────────────
+function openCaptainAuth(isSetup) {
+  document.getElementById('auth-new-wrap').style.display=isSetup?'':'none';
+  document.getElementById('auth-sub-text').textContent=isSetup?'Установите пароль капитана':'Введите пароль капитана';
+  document.getElementById('auth-password').value='';
+  document.getElementById('auth-password2').value='';
+  document.getElementById('auth-error').textContent='';
+  showScreen('screen-captain-auth');
+  document.getElementById('screen-captain-auth')._setup=isSetup;
+}
+document.getElementById('auth-back').onclick=()=>showScreen('screen-main');
+document.getElementById('auth-submit').onclick=()=>{
+  const isSetup=document.getElementById('screen-captain-auth')._setup;
+  const pass=document.getElementById('auth-password').value;
+  if(!pass){document.getElementById('auth-error').textContent='Введите пароль';return;}
+  if(isSetup){
+    const p2=document.getElementById('auth-password2').value;
+    if(pass!==p2){document.getElementById('auth-error').textContent='Пароли не совпадают';return;}
+    setCapPass(pass);addCapDevice(DID);showScreen('screen-main');setSection('captain');
+  } else {
+    if(pass!==getCapPass()){document.getElementById('auth-error').textContent='Неверный пароль';return;}
+    addCapDevice(DID);showScreen('screen-main');setSection('captain');
+  }
+  renderSectionsBar(); updateBadge();
+};
+document.getElementById('screen-captain-auth').addEventListener('click',e=>{
+  const form=document.querySelector('#screen-captain-auth .auth-form');
+  const back=document.getElementById('auth-back');
+  if(!form.contains(e.target)&&e.target!==back&&!back.contains(e.target)&&!e.target.classList.contains('auth-title')&&!e.target.classList.contains('auth-sub'))
+    showScreen('screen-main');
+});
+
+// ── NAV TABS ──────────────────────────────────────────────────
+document.querySelectorAll('#nav-tabs .tab').forEach(tab=>{tab.onclick=()=>setTab(tab.dataset.tab);});
+function setTab(tab) {
+  currentTab=tab;
+  document.querySelectorAll('#nav-tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  renderContent();
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderContent() {
+  if(!currentSection)return;
+  const area=document.getElementById('content-area'); area.innerHTML='';
+  if(currentTab==='today') renderDay(area,todayStr());
+  else if(currentTab==='tomorrow') renderDay(area,tomorrowStr());
+  else if(currentTab==='calendar') renderCalendar(area);
+  else if(currentTab==='done') renderDone(area);
+  updateProgress();
+}
+
+// ── DAY TASKS ─────────────────────────────────────────────────
+function renderDay(area, date) {
+  const tasks=getTasks(currentSection,date);
+  const d=new Date(date+'T00:00:00');
+  const DAYS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
+  const MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dh=document.createElement('div'); dh.className='date-header';
+  dh.innerHTML=`<div class="date-big">${DAYS[d.getDay()]}</div><div class="date-sub">${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>`;
+  area.appendChild(dh);
+  tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTaskEl(task,date)));
+  const ab=document.createElement('div'); ab.className='add-btn';
+  ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
+  ab.onclick=()=>addTask(date); area.appendChild(ab);
+}
+
+function addTask(date) {
+  const tasks=getTasks(currentSection,date);
+  const isCap=isUserCaptain();
+  const task={
+    id:'t'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    text:'',done:false,
+    authorName:isCap?'Капитан':currentUser.name,
+    authorRole:isCap?'captain':'crew',
+    authorRoleLabel:isCap?'Капитан':currentUser.role,
+    authorDeviceId:DID,
+    section:currentSection,
+    createdAt:new Date().toISOString(),
+    completedAt:null,completedByDid:null
+  };
+  tasks.push(task); saveTasks(currentSection,date,tasks);
+  renderContent();
+  setTimeout(()=>{const el=document.querySelector(`.task-text[data-id="${task.id}"]`);if(el)el.focus();},50);
+}
+
+function mkTaskEl(task, date) {
+  const item=document.createElement('div'); item.className='task-item'; item.dataset.id=task.id;
+  const sbg=document.createElement('div'); sbg.className='task-swipe-bg'; sbg.innerHTML='<span class="ci">✓</span>'; item.appendChild(sbg);
+  const content=document.createElement('div'); content.className='task-content';
+  const editable=canEditTask(task);
+  // Row
+  const row=document.createElement('div'); row.className='task-row';
+  const text=document.createElement('div'); text.className='task-text';
+  text.contentEditable=editable?'true':'false';
+  text.dataset.id=task.id; text.dataset.ph='Опишите задачу...';
+  text.textContent=task.text||'';
+  const delBtn=document.createElement('button'); delBtn.className='del-btn'; delBtn.textContent='×';
+  if(editable){
+    delBtn.onclick=()=>{const tt=getTasks(currentSection,date);saveTasks(currentSection,date,tt.filter(t=>t.id!==task.id));renderContent();};
+  } else {
+    delBtn.style.display='none';
+  }
+  row.appendChild(text); row.appendChild(delBtn); content.appendChild(row);
+  // Save button — big green pill, shown when editing
+  const saveBtn=document.createElement('button'); saveBtn.className='save-btn';
+  saveBtn.innerHTML='✓ &nbsp;Сохранить';
+  if(editable){
+    text.addEventListener('input',()=>saveBtn.classList.add('show'));
+    text.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveBtn.click();}});
+    saveBtn.onclick=()=>{
+      const tt=getTasks(currentSection,date); const t=tt.find(t=>t.id===task.id);
+      if(t){t.text=text.textContent.trim();saveTasks(currentSection,date,tt);}
+      saveBtn.classList.remove('show'); text.blur(); updateProgress();
+    };
+  }
+  content.appendChild(saveBtn);
+  // Meta
+  const meta=document.createElement('div'); meta.className='task-meta';
+  const top=document.createElement('div'); top.className='meta-top';
+  const auth=document.createElement('span');
+  auth.className='author-badge '+(task.authorRole==='captain'?'captain':'crew');
+  auth.textContent=task.authorName; top.appendChild(auth);
+  const rl=document.createElement('span'); rl.className='role-lbl'; rl.textContent=task.authorRoleLabel||''; top.appendChild(rl);
+  meta.appendChild(top);
+  const bot=document.createElement('div'); bot.className='meta-bot'; bot.textContent='создано '+formatTime(task.createdAt); meta.appendChild(bot);
+  content.appendChild(meta); item.appendChild(content);
+  setupSwipe(item,content,sbg,()=>completeTask(task.id,date));
+  return item;
+}
+
+function completeTask(taskId,date){
+  const tt=getTasks(currentSection,date); const t=tt.find(t=>t.id===taskId);
+  if(!t||t.done)return; t.done=true; t.completedAt=new Date().toISOString(); t.completedByDid=DID;
+  saveTasks(currentSection,date,tt); renderContent(); showToast('✓ Выполнено');
+}
+
+// ── SWIPE ─────────────────────────────────────────────────────
+function setupSwipe(item,content,bg,onComplete){
+  let sx=0,sy=0,dx=0,active=false,done=false;const T=80;
+  item.addEventListener('touchstart',e=>{if(done)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;active=true;dx=0;},{passive:true});
+  item.addEventListener('touchmove',e=>{
+    if(!active||done)return; dx=e.touches[0].clientX-sx; const dy=Math.abs(e.touches[0].clientY-sy);
+    if(dy>20&&Math.abs(dx)<dy){active=false;return;} if(dx<0){dx=0;return;}
+    const p=Math.min(dx/T,1); content.style.transform=`translateX(${dx}px)`; bg.style.opacity=p;
+    content.style.setProperty('--gp',Math.round(p*100)+'%'); content.classList.toggle('greening',p>0);
+  },{passive:true});
+  item.addEventListener('touchend',()=>{
+    if(!active)return;active=false;
+    if(dx>=T){done=true;content.style.transform=`translateX(${window.innerWidth}px)`;bg.style.opacity=1;content.style.transition='transform .3s ease';setTimeout(onComplete,280);}
+    else{content.style.transform='';bg.style.opacity=0;content.classList.remove('greening');}
+    dx=0;
+  });
+}
+
+// ── PROGRESS ─────────────────────────────────────────────────
+function updateProgress(){
+  if(!currentSection)return;
+  const tt=getTasks(currentSection,todayStr()).filter(t=>t.text&&t.text.trim());
+  const total=tt.length; const pct=total>0?Math.round(tt.filter(t=>t.done).length/total*100):0;
+  if(isCaptainSec()){
+    document.getElementById('cap-fill').style.width=pct+'%';
+    document.getElementById('cap-pct').textContent=pct+'%';
+    if(pct===100&&total>0&&!victorySeen){victorySeen=true;setTimeout(showVictory,800);}
+    else if(pct<100)victorySeen=false;
+  } else {
+    document.getElementById('crew-fill').style.width=pct+'%';
+    document.getElementById('crew-pct').textContent=pct+'%';
+    if(pct===100&&total>0&&!crewVictorySeen[currentSection]){crewVictorySeen[currentSection]=true;setTimeout(showCrewVictory,800);}
+    else if(pct<100)crewVictorySeen[currentSection]=false;
+  }
+}
+
+// ── CALENDAR ─────────────────────────────────────────────────
+let calSelectedDate=null;
+function renderCalendar(area){
+  const now=new Date(); if(!calY){calY=now.getFullYear();calM=now.getMonth();}
+  const wrap=document.createElement('div');wrap.className='calendar-wrap';
+  const hdr=document.createElement('div');hdr.className='cal-header';
+  const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  hdr.innerHTML=`<button class="cal-nav" id="cal-prev">‹</button><div class="cal-month">${MN[calM].toUpperCase()} ${calY}</div><button class="cal-nav" id="cal-next">›</button>`;
+  wrap.appendChild(hdr);
+  const grid=document.createElement('div');grid.className='cal-grid';
+  ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'].forEach(d=>{const el=document.createElement('div');el.className='cal-dn';el.textContent=d;grid.appendChild(el);});
+  let sd=new Date(calY,calM,1).getDay()-1;if(sd<0)sd=6;
+  const dim=new Date(calY,calM+1,0).getDate();const today=todayStr();
+  for(let i=0;i<sd;i++)grid.appendChild(document.createElement('div'));
+  for(let d=1;d<=dim;d++){
+    const ds=dateStr(new Date(calY,calM,d));
+    const tt=getTasks(currentSection,ds);
+    const el=document.createElement('div');el.className='cal-day';
+    if(ds===today)el.classList.add('today');
+    if(tt.some(t=>t.text&&t.text.trim()))el.classList.add('has-tasks');
+    if(ds===calSelectedDate)el.classList.add('selected');
+    el.textContent=d;el.onclick=()=>{calSelectedDate=ds;renderContent();};grid.appendChild(el);
+  }
+  wrap.appendChild(grid);area.appendChild(wrap);
+  if(calSelectedDate){const sep=document.createElement('div');sep.className='sec-sep';area.appendChild(sep);renderDay(area,calSelectedDate);}
+  document.getElementById('cal-prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}renderContent();};
+  document.getElementById('cal-next').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}renderContent();};
+}
+
+// ── DONE ─────────────────────────────────────────────────────
+function renderDone(area){
+  const today=todayStr(); const allDone=[];
+  if(isCaptainSec()&&isCapDev()){
+    Object.keys(localStorage).filter(k=>k.startsWith('tasks_captain_')).forEach(key=>{
+      const date=key.replace('tasks_captain_','');
+      (S.get(key)||[]).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:'Капитан',sectionId:'captain'}));
+    });
+  } else {
+    getVisibleSections().forEach(sec=>{
+      Object.keys(localStorage).filter(k=>k.startsWith('tasks_'+sec.id+'_')).forEach(key=>{
+        const date=key.replace('tasks_'+sec.id+'_','');
+        (S.get(key)||[]).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:sec.name,sectionId:sec.id}));
+      });
+    });
+  }
+  allDone.sort((a,b)=>new Date(b.completedAt||b.createdAt)-new Date(a.completedAt||a.createdAt));
+  if(!allDone.length){area.innerHTML='<div class="empty-state"><div class="ei">📋</div><p>Выполненных задач пока нет.<br>Свайпните задачу вправо.</p></div>';return;}
+  const grouped={};
+  allDone.forEach(t=>{if(!grouped[t.date])grouped[t.date]=[];grouped[t.date].push(t);});
+  Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
+    const sep=document.createElement('div');sep.className='done-date-sep';
+    const d=new Date(date+'T00:00:00');
+    const MN=['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+    sep.textContent=`${d.getDate()} ${MN[d.getMonth()]} ${d.getFullYear()}`;
+    area.appendChild(sep);
+    grouped[date].forEach(task=>area.appendChild(mkDoneEl(task,date,date===today)));
+  });
+}
+function mkDoneEl(task,date,isToday){
+  const canRevert=isToday&&canRevertTask(task);
+  const item=document.createElement('div');item.className='done-item';
+  const bg=document.createElement('div');bg.className='done-swipe-bg';
+  bg.innerHTML='<span style="font-size:18px;color:rgba(255,255,255,.6)">↩</span>';item.appendChild(bg);
+  const content=document.createElement('div');content.className='done-content';
+  const textEl=document.createElement('div');textEl.className='done-text';textEl.textContent=task.text;content.appendChild(textEl);
+  const meta=document.createElement('div');meta.className='done-meta';
+  const top=document.createElement('div');top.className='done-meta-top';
+  const auth=document.createElement('span');auth.className='author-badge '+(task.authorRole==='captain'?'captain':'crew');auth.textContent=task.authorName;top.appendChild(auth);
+  const rl=document.createElement('span');rl.className='role-lbl';rl.textContent=task.authorRoleLabel||'';top.appendChild(rl);
+  const secs=getVisibleSections();
+  if(task.sectionLabel&&secs.length>1){const sb=document.createElement('span');sb.className='done-sec-badge';sb.textContent=task.sectionLabel;top.appendChild(sb);}
+  meta.appendChild(top);
+  const bot=document.createElement('div');bot.className='done-meta-bot';
+  bot.textContent=`создано ${formatTime(task.createdAt)} · выполнено ${formatTime(task.completedAt)}`;
+  if(canRevert){const h=document.createElement('span');h.className='revert-hint';h.textContent=' · ← вернуть';bot.appendChild(h);}
+  meta.appendChild(bot);content.appendChild(meta);item.appendChild(content);
+  if(canRevert)setupSwipe(item,content,bg,()=>revertTask(task.id,task.sectionId,date));
+  return item;
+}
+function revertTask(taskId,secId,date){
+  const tt=getTasks(secId,date);const t=tt.find(t=>t.id===taskId);
+  if(!t)return;t.done=false;t.completedAt=null;t.completedByDid=null;
+  saveTasks(secId,date,tt);renderContent();showToast('↩ Возвращено в задачи');
+}
+
+// ── NEW SECTION ───────────────────────────────────────────────
+function openNewSection(){
+  document.getElementById('new-sec-name').value='';
+  const list=document.getElementById('new-sec-access');list.innerHTML='';
+  ALL_ROLES.forEach(role=>{
+    const item=document.createElement('div');item.className='access-item';
+    const cb=document.createElement('input');cb.type='checkbox';cb.id='nc_'+role;cb.value=role;
+    const lbl=document.createElement('label');lbl.htmlFor='nc_'+role;lbl.textContent=role;
+    item.appendChild(cb);item.appendChild(lbl);list.appendChild(item);
+    item.onclick=e=>{if(e.target!==cb)cb.checked=!cb.checked;};
+  });
+  openModal('modal-new-section');
+}
+document.getElementById('new-sec-submit').onclick=()=>{
+  const name=document.getElementById('new-sec-name').value.trim();if(!name)return;
+  const roles=[...document.querySelectorAll('#new-sec-access input:checked')].map(c=>c.value);
+  const secs=getSections();const id='sec_'+Date.now();
+  secs.push({id,name,roles});saveSections(secs);
+  closeModal('modal-new-section');renderSectionsBar();setSection(id);
+};
+
+// ── EDIT ACCESS ───────────────────────────────────────────────
+function openEditAccess(sec){
+  document.getElementById('edit-access-title').textContent='Доступ: '+sec.name;
+  const list=document.getElementById('edit-sec-access');list.innerHTML='';
+  ALL_ROLES.forEach(role=>{
+    const item=document.createElement('div');item.className='access-item';
+    const cb=document.createElement('input');cb.type='checkbox';cb.id='ea_'+role;cb.value=role;
+    cb.checked=!sec.roles||sec.roles.length===0||sec.roles.includes(role);
+    const lbl=document.createElement('label');lbl.htmlFor='ea_'+role;lbl.textContent=role;
+    item.appendChild(cb);item.appendChild(lbl);list.appendChild(item);
+    item.onclick=e=>{if(e.target!==cb)cb.checked=!cb.checked;};
+  });
+  openModal('modal-edit-access');
+}
+document.getElementById('edit-access-submit').onclick=()=>{
+  const roles=[...document.querySelectorAll('#edit-sec-access input:checked')].map(c=>c.value);
+  const secs=getSections();const sec=secs.find(s=>s.id===editAccessSecId);
+  if(sec){sec.roles=roles;saveSections(secs);}
+  closeModal('modal-edit-access');renderSectionsBar();
+};
+
+// ── CAPTAIN SETTINGS ──────────────────────────────────────────
+document.getElementById('cap-gear-btn').onclick=()=>{document.getElementById('cap-msg').textContent='';openModal('modal-captain-settings');};
+document.getElementById('cap-change-btn').onclick=()=>{
+  const p1=document.getElementById('cap-new-pass').value,p2=document.getElementById('cap-new-pass2').value;
+  const msg=document.getElementById('cap-msg');
+  if(!p1||p1!==p2){msg.style.color='var(--red)';msg.textContent='Пароли не совпадают';return;}
+  setCapPass(p1);msg.style.color='var(--green)';msg.textContent='Пароль изменён';
+  document.getElementById('cap-new-pass').value='';document.getElementById('cap-new-pass2').value='';
+};
+document.getElementById('cap-reset-btn').onclick=()=>{
+  resetCapDevices();const msg=document.getElementById('cap-msg');
+  msg.style.color='var(--green)';msg.textContent='Устройства сброшены';
+};
+
+// ── VICTORY ───────────────────────────────────────────────────
+function showVictory(){document.getElementById('victory-overlay').classList.add('show');}
+function closeVictory(){document.getElementById('victory-overlay').classList.remove('show');}
+function showCrewVictory(){document.getElementById('crew-victory-overlay').classList.add('show');}
+function closeCrewVictory(){document.getElementById('crew-victory-overlay').classList.remove('show');}
+
+// ── MODALS ────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('touchstart',e=>{if(e.target===m)closeModal(m.id);});
+  m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);});
+});
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+init();
+</script>
+</body>
+</html>
