@@ -179,9 +179,17 @@ select.minp{-webkit-appearance:none;appearance:none;background-color:var(--bg);b
 .empty-st{text-align:center;padding:36px 24px;color:var(--dim);}
 .empty-st .ei{font-size:42px;margin-bottom:12px;opacity:.4;}
 .empty-st p{font-size:13px;line-height:1.6;}
-/* FCM setup hint */
-.fcm-hint{background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.2);border-radius:12px;padding:12px 16px;font-size:11px;color:var(--dim);line-height:1.6;margin-top:8px;}
-.fcm-hint b{color:var(--gold);}
+/* POINTS / PROFILE */
+.pts-board{background:var(--surf2);border-radius:16px;padding:16px;margin-bottom:16px;text-align:center;}
+.pts-value{font-family:'Bebas Neue',sans-serif;font-size:56px;color:var(--gold);letter-spacing:4px;line-height:1;}
+.pts-label{font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
+.pts-history{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.pts-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border-radius:10px;}
+.pts-row-text{font-size:12px;color:var(--text);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pts-plus{color:var(--green);font-weight:700;font-size:13px;flex-shrink:0;}
+.pts-minus{color:var(--red);font-weight:700;font-size:13px;flex-shrink:0;}
+.pts-time{font-size:9px;color:var(--dim);flex-shrink:0;}
+.pts-desc{font-size:11px;color:var(--dim);line-height:1.6;padding:12px 14px;background:var(--bg);border-radius:10px;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -218,7 +226,7 @@ select.minp{-webkit-appearance:none;appearance:none;background-color:var(--bg);b
     <div class="hright">
       <div class="udot"></div>
       <div class="uinfo"><div class="uname" id="badge-name">...</div><div class="urole" id="badge-role"></div></div>
-      <button class="gear-btn" onclick="openSettings()">⚙️</button>
+      <button class="gear-btn" onclick="openSettings()">👤</button>
     </div>
   </div>
   <div id="cap-prog" style="display:none" class="prog-wrap">
@@ -469,6 +477,7 @@ function startSSE(){
   if(isCap())secIds.push('captain');
   secIds.forEach(sid=>openSSE(sid,today));
   openDutySSE();
+  openSectionsSSE();
   // Reconnect heartbeat every 25s (Firebase SSE drops after 30s idle)
   window._sseHB=setInterval(()=>{
     secIds.forEach(sid=>{const es=sseStreams['t_'+sid];if(!es||es.readyState===2)openSSE(sid,today);});
@@ -512,6 +521,27 @@ function openDutySSE(){
   es.addEventListener('patch',()=>{const sec=sections.find(s=>s.id===curSec);if(sec?.isDuty)renderC();});
   es.onerror=()=>{};
   sseStreams['duty']=es;
+}
+function openSectionsSSE(){
+  if(sseStreams['secs']){try{sseStreams['secs'].close();}catch(e){}}
+  const es=new EventSource(DB+'/sections.json?accept=text%2Fevent-stream');
+  es.addEventListener('put',async e=>{
+    try{
+      const raw=JSON.parse(e.data).data;
+      if(raw){
+        const arr=o2a(raw).sort((a,b)=>(a.order||99)-(b.order||99));
+        sections=arr;
+        renderSBar(); // update sections bar for all users instantly
+        // If current section was removed, go to no-section
+        if(curSec&&!sections.find(s=>s.id===curSec)&&curSec!=='captain'){showNoSection();}
+      }
+    }catch(er){}
+  });
+  es.addEventListener('patch',async()=>{
+    await loadSecs();renderSBar();
+  });
+  es.onerror=()=>{};
+  sseStreams['secs']=es;
 }
 
 // ═══ SECTIONS BAR ════════════════════════════════════════════════
@@ -601,8 +631,32 @@ function mkTask(task,date){
   return item;
 }
 async function completeTask(tid,date){
+  const tasks=await fbG('/tasks/'+curSec+'/'+date)||{};
+  const task=o2a(tasks).find(t=>t.id===tid);
   await fbP('/tasks/'+curSec+'/'+date+'/'+tid,{done:true,completedAt:new Date().toISOString(),completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role});
-  playSound('done');showToast('✓ Выполнено');
+  // Award 1 point to completer
+  if(CU?.id){
+    await addPoints(CU.id,1,'✓ Задача выполнена: '+(task?.text||'').slice(0,30));
+  }
+  playSound('done');showToast('✓ Выполнено +1 балл');
+}
+
+// ═══ POINTS SYSTEM ═══════════════════════════════════════════════
+async function addPoints(accId,delta,reason){
+  const now=new Date().toISOString();
+  const entry={delta,reason,at:now};
+  // Push to history
+  await fbS('/points/'+accId+'/history/'+Date.now(),entry);
+  // Update total
+  const cur=await fbG('/points/'+accId+'/total')||0;
+  await fbS('/points/'+accId+'/total',cur+delta);
+}
+async function getPoints(accId){
+  return await fbG('/points/'+accId+'/total')||0;
+}
+async function getPointsHistory(accId){
+  const raw=await fbG('/points/'+accId+'/history')||{};
+  return o2a(raw).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,5);
 }
 
 // ═══ SWIPE — tasks (right only = complete) ════════════════════════
@@ -689,14 +743,15 @@ async function renderCalendar(area){
 }
 async function renderCalendarDay(date){
   const area=$('carea');
-  // Remove everything after the calendar grid
-  const grid=area.querySelector('.cal-grid');
-  if(grid){
-    let next=grid.nextSibling;
-    while(next){const tmp=next.nextSibling;next.remove();next=tmp;}
+  // Remove everything after the cal-wrap (calendar grid container)
+  const calWrap=area.querySelector('.cal-wrap');
+  if(calWrap){
+    while(calWrap.nextSibling)calWrap.nextSibling.remove();
   }
   const sep=mk('div','secsep');area.appendChild(sep);
   await renderDayInline(area,date);
+  // Scroll to show the day content
+  setTimeout(()=>{sep.scrollIntoView({behavior:'smooth',block:'start'});},100);
 }
 async function renderDayInline(area,date){
   const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
@@ -835,7 +890,14 @@ function mkDoneEl(task,date,isToday){
   if(canRev){const h=mk('span','revert-hint');h.textContent=' ← вернуть';bot.appendChild(h);}
   if(canDel){const h=mk('span','del-hint');h.textContent=' → удалить';bot.appendChild(h);}
   cont.appendChild(bot);item.appendChild(cont);
-  const revCb=canRev?async()=>{await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});renderC();showToast('↩ Возвращено');}:null;
+  const revCb=canRev?async()=>{
+    // Deduct 2 points from who completed it
+    if(task.completedByAccId){
+      await addPoints(task.completedByAccId,-2,'✗ Задача отклонена: '+(task.text||'').slice(0,30));
+    }
+    await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});
+    renderC();showToast('↩ Возвращено. -2 балла исполнителю');
+  }:null;
   const delCb=canDel?async()=>{await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);renderC();showToast('🗑 Удалено');}:null;
   setupSwipeDone(item,cont,bgRev,bgDel,revCb,delCb);
   return item;
@@ -843,44 +905,67 @@ function mkDoneEl(task,date,isToday){
 
 // ═══ SETTINGS ════════════════════════════════════════════════════
 function openSettings(){
-  const b=$('settings-body');b.innerHTML='';
-  if(isCap()){
-    b.innerHTML=`<div class="mtitle">⚓ Капитан</div><div class="msub">Сменить пароль</div>
-    <input class="minp" id="cp1" type="password" placeholder="Новый пароль">
-    <input class="minp" id="cp2" type="password" placeholder="Повторите" style="margin-top:8px">
-    <button class="mbtn" onclick="chPass('cp1','cp2','cmsg')">СМЕНИТЬ ПАРОЛЬ</button>
-    <button class="mbtn neutral" onclick="enableNotifs()" style="margin-top:8px">🔔 ВКЛЮЧИТЬ УВЕДОМЛЕНИЯ</button>
-    <button class="mbtn neutral" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
+  const b=$('settings-body');
+  const notifStatus=!('Notification' in window)?'недоступны':
+    Notification.permission==='granted'?'включены ✓':
+    Notification.permission==='denied'?'заблокированы':
+    'выключены';
+  b.innerHTML=`
+    <div class="mtitle">👤 Личный кабинет</div>
+    <div class="pts-board">
+      <div class="pts-value" id="pts-val">...</div>
+      <div class="pts-label">БАЛЛОВ</div>
+    </div>
+    <div class="msub">История начислений</div>
+    <div class="pts-history" id="pts-hist"><div style="color:var(--dim);font-size:12px;text-align:center;padding:8px">Загрузка...</div></div>
+    <div class="pts-desc">За каждое выполненное задание начисляется 1 балл, но в случае отклонения выполнения задания вышестоящим персоналом будет сниматься 2 балла. Выполняйте задачи внимательно и качественно!</div>
+    <div style="margin-top:16px"></div>
+    <div class="msub">Сменить пароль</div>
+    <input class="minp" id="sp1" type="password" placeholder="Новый пароль">
+    <input class="minp" id="sp2" type="password" placeholder="Повторите" style="margin-top:8px">
+    <button class="mbtn" onclick="chPass('sp1','sp2','smsg')">СМЕНИТЬ ПАРОЛЬ</button>
+    <button class="mbtn neutral" id="notif-btn" onclick="enableNotifs()" style="margin-top:8px">🔔 Уведомления: ${notifStatus}</button>
+    ${isCap()?`<button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>`:''}
     <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
-    <button class="mbtn danger" onclick="resetSess()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ</button>
-    <div class="mmsg" id="cmsg"></div>`;
-  }else{
-    b.innerHTML=`<div class="mtitle">⚙️ Настройки</div><div class="msub">Сменить пароль</div>
-    <input class="minp" id="up1" type="password" placeholder="Новый пароль">
-    <input class="minp" id="up2" type="password" placeholder="Повторите" style="margin-top:8px">
-    <button class="mbtn" onclick="chPass('up1','up2','umsg')">СМЕНИТЬ ПАРОЛЬ</button>
-    <button class="mbtn neutral" onclick="enableNotifs()" style="margin-top:8px">🔔 УВЕДОМЛЕНИЯ</button>
-    <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
-    <div class="mmsg" id="umsg"></div>`;
-  }
+    ${isCap()?`<button class="mbtn danger" onclick="resetSess()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ</button>`:''}
+    <div class="mmsg" id="smsg"></div>`;
   openM('m-settings');
+  loadSettingsPoints();
+}
+async function loadSettingsPoints(){
+  if(!CU?.id)return;
+  const pts=await getPoints(CU.id);
+  const v=$('pts-val');if(v)v.textContent=pts;
+  const hist=await getPointsHistory(CU.id);
+  const hbox=$('pts-hist');if(!hbox)return;
+  if(!hist.length){hbox.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:8px">Баллов пока нет</div>';return;}
+  hbox.innerHTML='';
+  hist.forEach(h=>{
+    const row=mk('div','pts-row');
+    const sign=mk('div',h.delta>0?'pts-plus':'pts-minus');
+    sign.textContent=(h.delta>0?'+':'')+h.delta;
+    const txt=mk('div','pts-row-text');txt.textContent=h.reason||'';
+    const t=mk('div','pts-time');t.textContent=fTime(h.at);
+    row.appendChild(sign);row.appendChild(txt);row.appendChild(t);
+    hbox.appendChild(row);
+  });
 }
 async function enableNotifs(){
   if(!('Notification' in window)){showToast('Браузер не поддерживает уведомления');return;}
-  if(Notification.permission==='granted'){
-    showToast('✅ Уведомления уже включены');return;
-  }
-  if(Notification.permission==='denied'){
-    showToast('⚠️ Уведомления заблокированы — разреши в настройках телефона');return;
-  }
+  if(Notification.permission==='granted'){showToast('✅ Уведомления уже включены');return;}
+  if(Notification.permission==='denied'){showToast('⚠️ Разреши уведомления в настройках телефона → Safari → Уведомления');return;}
   const perm=await Notification.requestPermission();
-  if(perm==='granted')showToast('✅ Уведомления включены!');
+  if(perm==='granted'){showToast('✅ Уведомления включены!');const b=$('notif-btn');if(b)b.textContent='🔔 Уведомления: включены ✓';}
   else showToast('⚠️ Разреши уведомления в настройках телефона');
 }
 async function chPass(id1,id2,msgId){
-  const p1=$(id1).value,p2=$(id2).value,msg=$(msgId);
+  const el1=$(id1),el2=$(id2),msg=$(msgId);
+  if(!el1||!el2||!msg)return;
+  const p1=el1.value,p2=el2.value;
   if(!p1||p1!==p2){msg.style.color='var(--red)';msg.textContent='Пароли не совпадают';return;}
-  await fbP('/accounts/'+CU.id,{passHash:hashP(p1)});CU.passHash=hashP(p1);msg.style.color='var(--green)';msg.textContent='Пароль изменён';
+  await fbP('/accounts/'+CU.id,{passHash:hashP(p1)});CU.passHash=hashP(p1);
+  msg.style.color='var(--green)';msg.textContent='Пароль изменён';
+  el1.value='';el2.value='';
 }
 async function resetSess(){const msg=$('cmsg');msg.style.color='var(--green)';msg.textContent='Сессии сброшены (функция через Firebase Auth)';}
 
