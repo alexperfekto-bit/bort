@@ -437,35 +437,27 @@ async function afterLogin(){
 function doLogout(){localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
 function updateBadge(){if(!CU)return;document.getElementById('badge-name').textContent=CU.name.toUpperCase();document.getElementById('badge-name').className='uname '+bClass(CU.role);document.getElementById('badge-role').textContent=CU.role;}
 
-// ═══ FCM PUSH NOTIFICATIONS ═════════════════════════════════════
+// ═══ NOTIFICATIONS ═══════════════════════════════════════════════
 async function initFCM(){
   try{
-    if(!('serviceWorker' in navigator)||!('PushManager' in window)){return;}
-    // Register SW
-    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    // Request notification permission
-    const perm=await Notification.requestPermission();
-    if(perm!=='granted')return;
-    // Import Firebase dynamically
-    if(!window.firebase){
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+    if(!('Notification' in window))return;
+    if(Notification.permission==='default'){
+      setTimeout(async()=>{
+        const perm=await Notification.requestPermission();
+        if(perm==='granted')showToast('🔔 Уведомления включены');
+      },1500);
+      return;
     }
-    if(!firebase.apps.length)firebase.initializeApp(FB_CONFIG);
-    const messaging=firebase.messaging();
-    // Get FCM token
-    const token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-    if(token&&CU?.id){
-      // Save token to DB so server can send notifications to this device
-      await fbS('/fcm_tokens/'+CU.id+'/'+DID,{token,name:CU.name,role:CU.role,updatedAt:new Date().toISOString()});
+    const perm=Notification.permission;
+  }catch(e){}
+}
+function sendPush(title,body){
+  try{
+    if('Notification' in window&&Notification.permission==='granted'){
+      new Notification(title,{body,tag:'bort',renotify:true,
+        icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">⚓</text></svg>'});
     }
-    // Foreground messages
-    messaging.onMessage(payload=>{
-      const t=payload.notification?.title||'БОРТ';
-      const b=payload.notification?.body||'Новое сообщение';
-      showToast('🔔 '+b);playSound('notify');
-    });
-  }catch(e){console.log('FCM init failed:',e);}
+  }catch(e){}
 }
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
@@ -502,6 +494,7 @@ function openSSE(sid,date){
         const sname=sid==='captain'?'Капитан':(sec?.name||sid);
         showToast('🔔 Новая задача: '+sname);
         playSound('notify');
+        sendPush('БОРТ — новая задача','В разделе "'+sname+'" добавлена задача');
       }
       prevCounts[sid]=newFromOthers.length;
       if(sid===curSec&&(curTab==='today'||curTab==='done'))renderC();
@@ -849,7 +842,8 @@ function openSettings(){
     <input class="minp" id="cp1" type="password" placeholder="Новый пароль">
     <input class="minp" id="cp2" type="password" placeholder="Повторите" style="margin-top:8px">
     <button class="mbtn" onclick="chPass('cp1','cp2','cmsg')">СМЕНИТЬ ПАРОЛЬ</button>
-    <button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
+    <button class="mbtn neutral" onclick="enableNotifs()" style="margin-top:8px">🔔 ВКЛЮЧИТЬ УВЕДОМЛЕНИЯ</button>
+    <button class="mbtn neutral" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
     <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
     <button class="mbtn danger" onclick="resetSess()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ</button>
     <div class="mmsg" id="cmsg"></div>`;
@@ -862,6 +856,13 @@ function openSettings(){
     <div class="mmsg" id="umsg"></div>`;
   }
   openM('m-settings');
+}
+async function enableNotifs(){
+  if(!('Notification' in window)){showToast('Уведомления не поддерживаются');return;}
+  if(Notification.permission==='granted'){showToast('🔔 Уведомления уже включены');return;}
+  const perm=await Notification.requestPermission();
+  if(perm==='granted')showToast('🔔 Уведомления включены!');
+  else showToast('Уведомления отклонены — разреши в настройках телефона');
 }
 async function chPass(id1,id2,msgId){
   const p1=$(id1).value,p2=$(id2).value,msg=$(msgId);
