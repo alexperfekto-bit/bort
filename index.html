@@ -461,7 +461,7 @@ async function afterLogin(){
   await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
   initFCM();startSSE();
 }
-function doLogout(){localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
+function doLogout(){closeM('m-settings');localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
 function updateBadge(){if(!CU)return;document.getElementById('badge-name').textContent=CU.name.toUpperCase();document.getElementById('badge-name').className='uname '+bClass(CU.role);document.getElementById('badge-role').textContent=CU.role;}
 
 // ═══ NOTIFICATIONS ═══════════════════════════════════════════════
@@ -498,7 +498,7 @@ let _rendering=false; // prevent concurrent renders
 function startSSE(){
   stopSSE();
   _poll();
-  _pollTimer=setInterval(_poll,3000);
+  _pollTimer=setInterval(_poll,1500);
   // Also poll on page visibility change (iOS resumes from background)
   document.addEventListener('visibilitychange',_onVisible);
 }
@@ -981,13 +981,21 @@ function mkDoneEl(task,date,isToday){
   if(canRev){const h=mk('span','revert-hint');h.textContent=' ← вернуть';bot.appendChild(h);}
   if(canDel){const h=mk('span','del-hint');h.textContent=' → удалить';bot.appendChild(h);}
   cont.appendChild(bot);item.appendChild(cont);
+  const SENIOR_ROLES=['Капитан','Старший помощник','Старшая стюардесса'];
   const revCb=canRev?async()=>{
-    // Deduct 2 points from who completed it
     if(task.completedByAccId){
-      await addPoints(task.completedByAccId,-2,'✗ Задача отклонена: '+(task.text||'').slice(0,30));
+      // Self-revert = -1, senior revert = -2
+      const isSelf=task.completedByAccId===CU?.id;
+      const delta=isSelf?-1:-2;
+      const reason=isSelf
+        ?'↩ Сам отменил выполнение: '+(task.text||'').slice(0,30)
+        :'✗ Отклонено вышестоящим: '+(task.text||'').slice(0,30);
+      await addPoints(task.completedByAccId,delta,reason);
+      const msg=isSelf?'↩ Возвращено. -1 балл':'↩ Возвращено. -2 балла исполнителю';
+      showToast(msg);
     }
     await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});
-    renderC();showToast('↩ Возвращено. -2 балла исполнителю');
+    renderC();
   }:null;
   const delCb=canDel?async()=>{await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);renderC();showToast('🗑 Удалено');}:null;
   setupSwipeDone(item,cont,bgRev,bgDel,revCb,delCb);
