@@ -891,7 +891,10 @@ async function completeTask(tid,date){
   const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
   const tasks=o2a(raw);
   const task=tasks.find(t=>t.id===tid);
-  await fbP('/tasks/'+curSec+'/'+date+'/'+tid,{done:true,completedAt:new Date().toISOString(),completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role});
+  await fbP('/tasks/'+curSec+'/'+date+'/'+tid,{
+    done:true,completedAt:new Date().toISOString(),
+    completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role
+  });
   if(CU?.id){await addPoints(CU.id,1,'✓ Задача выполнена: '+(task?.text||'').slice(0,30));}
   playSound('done');showToast('✓ Выполнено +1 балл');
   // Update task cache
@@ -899,12 +902,13 @@ async function completeTask(tid,date){
   if(_taskCache[cacheKey]&&_taskCache[cacheKey][tid]){
     _taskCache[cacheKey][tid]={..._taskCache[cacheKey][tid],done:true};
   }
-  // Check if all tasks for this date are now done — remove dot
+  // Remove dot if NO undone tasks remain (exclude the one just completed)
   const remaining=tasks.filter(t=>t.id!==tid&&!t.done&&t.text?.trim());
   if(remaining.length===0){
     const dayNum=new Date(date+'T00:00:00').getDate();
-    // Only remove dot if viewing that date's month
-    document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.remove('has-tasks');});
+    document.querySelectorAll('.cal-day').forEach(el=>{
+      if(el.textContent.trim()===String(dayNum))el.classList.remove('has-tasks');
+    });
   }
   updateProg();
 }
@@ -1275,6 +1279,7 @@ function mkDoneEl(task,date,isToday){
   if(canDel){const h=mk('span','del-hint');h.textContent=' → удалить';bot.appendChild(h);}
   cont.appendChild(bot);item.appendChild(cont);
   const revCb=canRev?async()=>{
+    const secId=task.sectionId||curSec;
     if(task.completedByAccId){
       const isSelf=task.completedByAccId===CU?.id;
       const delta=isSelf?-1:-2;
@@ -1282,15 +1287,21 @@ function mkDoneEl(task,date,isToday){
       await addPoints(task.completedByAccId,delta,reason);
       showToast(isSelf?'↩ Возвращено. -1 балл':'↩ Возвращено. -2 балла исполнителю');
     }
-    // Return to original section with "переделать" mark
-    await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{
-      done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null,
-      needsRedo:true
+    // Return to original section+date with "переделать" mark
+    await fbP('/tasks/'+secId+'/'+date+'/'+task.id,{
+      done:false,completedAt:null,completedByAccId:null,
+      completedByName:null,completedByRole:null,needsRedo:true
+    });
+    // Restore calendar dot for that date
+    const dayNum=new Date(date+'T00:00:00').getDate();
+    document.querySelectorAll('.cal-day').forEach(el=>{
+      if(el.textContent.trim()===String(dayNum))el.classList.add('has-tasks');
     });
     // DOM removal handled by setupSwipeDone animation
   }:null;
   const delCb=canDel?async()=>{
-    await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);
+    const secId=task.sectionId||curSec;
+    await fbD('/tasks/'+secId+'/'+date+'/'+task.id);
     showToast('🗑 Удалено');
     // DOM removal handled by setupSwipeDone animation
   }:null;
