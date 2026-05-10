@@ -460,31 +460,9 @@ async function doLogin(){
 async function afterLogin(){
   await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
   initFCM();startSSE();
-  // Listen for forced logout
-  listenForLogout();
 }
 function doLogout(){localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
 function updateBadge(){if(!CU)return;document.getElementById('badge-name').textContent=CU.name.toUpperCase();document.getElementById('badge-name').className='uname '+bClass(CU.role);document.getElementById('badge-role').textContent=CU.role;}
-
-// Listen for forced logout signal in Firebase
-function listenForLogout(){
-  if(!CU?.id)return;
-  if(sseStreams['logout']){try{sseStreams['logout'].close();}catch(e){}}
-  const es=new EventSource(DB+'/accounts/'+CU.id+'.json?accept=text%2Fevent-stream');
-  es.addEventListener('put',e=>{
-    try{
-      const acc=JSON.parse(e.data).data;
-      if(acc&&acc.locked===true&&!isCap()){
-        // Unlock self immediately then logout
-        fbP('/accounts/'+CU.id,{locked:false});
-        showToast('Сессия сброшена капитаном');
-        setTimeout(()=>doLogout(),1500);
-      }
-    }catch(er){}
-  });
-  es.onerror=()=>{};
-  sseStreams['logout']=es;
-}
 
 // ═══ NOTIFICATIONS ═══════════════════════════════════════════════
 async function initFCM(){
@@ -510,79 +488,87 @@ function sendPush(title,body){
 }
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
-// ═══ SSE REAL-TIME ══════════════════════════════════════════════
+// ═══ POLLING (replaces SSE — iOS Safari compatible) ══════════════
+let _pollTimer=null;
+let _lastHash={};  // section -> hash of task count+done state
+let _lastSecHash=''; // hash of sections config
+let _lastDutyHash=''; // hash of duty assignments
+let _rendering=false; // prevent concurrent renders
+
 function startSSE(){
   stopSSE();
-  const today=todayS();
-  const secIds=[...visSecs().map(s=>s.id)];
-  if(isCap())secIds.push('captain');
-  secIds.forEach(sid=>openSSE(sid,today));
-  openDutySSE();
-  openSectionsSSE();
-  // Reconnect heartbeat every 25s (Firebase SSE drops after 30s idle)
-  window._sseHB=setInterval(()=>{
-    secIds.forEach(sid=>{const es=sseStreams['t_'+sid];if(!es||es.readyState===2)openSSE(sid,today);});
-    const de=sseStreams['duty'];if(!de||de.readyState===2)openDutySSE();
-  },25000);
+  _poll();
+  _pollTimer=setInterval(_poll,3000);
+  // Also poll on page visibility change (iOS resumes from background)
+  document.addEventListener('visibilitychange',_onVisible);
 }
-function stopSSE(){Object.values(sseStreams).forEach(es=>{try{es.close();}catch(e){}});sseStreams={};if(window._sseHB)clearInterval(window._sseHB);}
-
-function openSSE(sid,date){
-  const key='t_'+sid;
-  if(sseStreams[key]){try{sseStreams[key].close();}catch(e){}}
-  const url=DB+'/tasks/'+sid+'/'+date+'.json?accept=text%2Fevent-stream';
-  const es=new EventSource(url);
-  es.addEventListener('put',e=>{
-    try{
-      const data=JSON.parse(e.data).data;
-      const tasks=o2a(data||{}).filter(t=>t.text&&t.text.trim());
-      // Notification for new tasks from others
-      const newFromOthers=tasks.filter(t=>!t.done&&t.authorAccId!==CU?.id);
-      const prev=prevCounts[sid]??-1;
-      if(prev!==-1&&newFromOthers.length>prev){
-        const sec=sections.find(s=>s.id===sid);
-        const sname=sid==='captain'?'Капитан':(sec?.name||sid);
-        showToast('🔔 Новая задача: '+sname);
-        playSound('notify');
-        sendPush('БОРТ — новая задача','В разделе "'+sname+'" добавлена задача');
+function stopSSE(){
+  if(_pollTimer)clearInterval(_pollTimer);_pollTimer=null;
+  document.removeEventListener('visibilitychange',_onVisible);
+  sseStreams={};
+}
+function _onVisible(){
+  if(document.visibilityState==='visible'){
+    // Page became visible — poll immediately and re-render current view
+    _poll();
+    if(curSec)renderC();
+  }
+}
+async function _poll(){
+  if(!CU?.id||_rendering)return;
+  try{
+    const today=todayS();
+    // 1. Poll current section tasks (always)
+    if(curSec&&curSec!=='captain'||isCap()){
+      const secToCheck=curSec||'';
+      if(secToCheck){
+        const raw=await fbG('/tasks/'+secToCheck+'/'+today)||{};
+        const tasks=o2a(raw).filter(t=>t.text&&t.text.trim());
+        const newFromOthers=tasks.filter(t=>!t.done&&t.authorAccId!==CU.id);
+        const hash=tasks.length+'_'+tasks.filter(t=>t.done).length;
+        if(_lastHash[secToCheck]!==undefined&&_lastHash[secToCheck]!==hash){
+          // Something changed — re-render if on today/done tab
+          if(curTab==='today'||curTab==='done')renderC();
+          updateProg();
+        }
+        // Notify about new tasks from others
+        const prev=prevCounts[secToCheck]??-1;
+        if(prev!==-1&&newFromOthers.length>prev){
+          const sec=sections.find(s=>s.id===secToCheck);
+          const sname=secToCheck==='captain'?'Капитан':(sec?.name||secToCheck);
+          showToast('🔔 Новая задача: '+sname);
+          playSound('notify');
+          sendPush('БОРТ','Новая задача в "'+sname+'"');
+        }
+        prevCounts[secToCheck]=newFromOthers.length;
+        _lastHash[secToCheck]=hash;
       }
-      prevCounts[sid]=newFromOthers.length;
-      if(sid===curSec&&(curTab==='today'||curTab==='done'))renderC();
-      if(sid===curSec)updateProg();
-    }catch(er){}
-  });
-  es.addEventListener('patch',()=>{if(sid===curSec)renderC();});
-  es.onerror=()=>{};
-  sseStreams[key]=es;
-}
-function openDutySSE(){
-  if(sseStreams['duty']){try{sseStreams['duty'].close();}catch(e){}}
-  const es=new EventSource(DB+'/duty.json?accept=text%2Fevent-stream');
-  es.addEventListener('put',()=>{const sec=sections.find(s=>s.id===curSec);if(sec?.isDuty)renderC();});
-  es.addEventListener('patch',()=>{const sec=sections.find(s=>s.id===curSec);if(sec?.isDuty)renderC();});
-  es.onerror=()=>{};
-  sseStreams['duty']=es;
-}
-function openSectionsSSE(){
-  if(sseStreams['secs']){try{sseStreams['secs'].close();}catch(e){}}
-  const es=new EventSource(DB+'/sections.json?accept=text%2Fevent-stream');
-  es.addEventListener('put',async e=>{
-    try{
-      const raw=JSON.parse(e.data).data;
-      if(raw){
-        const arr=o2a(raw).sort((a,b)=>(a.order||99)-(b.order||99));
-        sections=arr;
-        renderSBar(); // update sections bar for all users instantly
-        // If current section was removed, go to no-section
-        if(curSec&&!sections.find(s=>s.id===curSec)&&curSec!=='captain'){showNoSection();}
+    }
+    // 2. Poll sections config for changes
+    const secsRaw=await fbG('/sections');
+    const secsHash=JSON.stringify(secsRaw);
+    if(_lastSecHash&&_lastSecHash!==secsHash){
+      await loadSecs();renderSBar();
+    }
+    _lastSecHash=secsHash;
+    // 3. Poll duty if on duty section
+    const sec=sections.find(s=>s.id===curSec);
+    if(sec?.isDuty){
+      const dutyRaw=await fbG('/duty')||{};
+      const dutyHash=JSON.stringify(dutyRaw);
+      if(_lastDutyHash&&_lastDutyHash!==dutyHash)renderC();
+      _lastDutyHash=dutyHash;
+    }
+    // 4. Check if captain forced logout
+    if(!isCap()){
+      const acc=await fbG('/accounts/'+CU.id);
+      if(acc?.locked===true){
+        await fbP('/accounts/'+CU.id,{locked:false});
+        showToast('Сессия сброшена капитаном');
+        setTimeout(()=>doLogout(),1500);
       }
-    }catch(er){}
-  });
-  es.addEventListener('patch',async()=>{
-    await loadSecs();renderSBar();
-  });
-  es.onerror=()=>{};
-  sseStreams['secs']=es;
+    }
+  }catch(e){}
 }
 
 // ═══ SECTIONS BAR ════════════════════════════════════════════════
@@ -610,14 +596,16 @@ function setTab(tab){curTab=tab;document.querySelectorAll('.ntab').forEach(t=>t.
 
 // ═══ RENDER ══════════════════════════════════════════════════════
 function renderC(){
-  if(!curSec)return;
+  if(!curSec||_rendering)return;
+  _rendering=true;
   const area=$('carea');area.innerHTML='';
   const sec=sections.find(s=>s.id===curSec);
-  if(sec?.isDuty){renderDutyCalendar(area);return;}
-  if(curTab==='today')renderDay(area,todayS());
-  else if(curTab==='tomorrow')renderDay(area,tomorrowS());
-  else if(curTab==='calendar')renderCalendar(area);
-  else if(curTab==='done')renderDone(area);
+  if(sec?.isDuty){renderDutyCalendar(area).finally(()=>{_rendering=false;});return;}
+  if(curTab==='today')renderDay(area,todayS()).finally(()=>{_rendering=false;});
+  else if(curTab==='tomorrow')renderDay(area,tomorrowS()).finally(()=>{_rendering=false;});
+  else if(curTab==='calendar'){renderCalendar(area).finally(()=>{_rendering=false;});}
+  else if(curTab==='done'){renderDone(area).finally(()=>{_rendering=false;});}
+  else _rendering=false;
   updateProg();
 }
 
