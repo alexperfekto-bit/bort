@@ -459,7 +459,19 @@ async function afterLogin(){
   await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
   initFCM();startSSE();
 }
-function doLogout(){closeM('m-settings');localStorage.removeItem('__session');CU=null;stopSSE();showS('sc-login');buildLoginForm();}
+function doLogout(){
+  // Stop polling immediately
+  if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null;}
+  document.removeEventListener('visibilitychange',_onVisible);
+  // Clear state
+  localStorage.removeItem('__session');
+  CU=null;sections=[];curSec=null;
+  _lastHash={};_lastSecHash='';_lastDutyHash='';_rendering=false;
+  // Close modal and show login instantly
+  document.querySelectorAll('.moverlay').forEach(m=>m.classList.remove('open'));
+  showS('sc-login');
+  buildLoginForm();
+}
 function updateBadge(){if(!CU)return;document.getElementById('badge-name').textContent=CU.name.toUpperCase();document.getElementById('badge-name').className='uname '+bClass(CU.role);document.getElementById('badge-role').textContent=CU.role;}
 
 // ═══ NOTIFICATIONS ═══════════════════════════════════════════════
