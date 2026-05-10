@@ -1292,11 +1292,22 @@ function mkDoneEl(task,date,isToday){
       done:false,completedAt:null,completedByAccId:null,
       completedByName:null,completedByRole:null,needsRedo:true
     });
-    // Restore calendar dot for that date
+    // Restore calendar dot
     const dayNum=new Date(date+'T00:00:00').getDate();
     document.querySelectorAll('.cal-day').forEach(el=>{
       if(el.textContent.trim()===String(dayNum))el.classList.add('has-tasks');
     });
+    // If currently viewing calendar and this date is selected — refresh day section
+    if(curTab==='calendar'&&calSel===date&&secId===curSec){
+      renderCalendarDay(date);
+    }
+    // If viewing today/tomorrow tab and date matches — refresh
+    if(curTab==='today'&&date===todayS()&&secId===curSec){
+      _rendering=false;renderC();
+    }
+    if(curTab==='tomorrow'&&date===tomorrowS()&&secId===curSec){
+      _rendering=false;renderC();
+    }
     // DOM removal handled by setupSwipeDone animation
   }:null;
   const delCb=canDel?async()=>{
