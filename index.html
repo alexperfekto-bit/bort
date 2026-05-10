@@ -399,9 +399,7 @@ async function init(){
     try{
       const a=await fbG('/accounts/'+sid);
       if(a&&a.name){
-        // Clear locked flag on login (session restored = this device is authorized)
-        if(a.locked){await fbP('/accounts/'+sid,{locked:false});}
-        CU={...a,id:sid,locked:false};
+        CU={...a,id:sid};
         await afterLogin();
         return;
       }
@@ -452,13 +450,12 @@ async function doLogin(){
   if(!entry){err.textContent='Пользователь не найден';return;}
   const [id,acc]=entry;
   if(acc.passHash!==hashP(pass)){err.textContent='Неверный пароль';return;}
-  // Clear locked flag — user re-authenticated successfully
-  if(acc.locked)await fbP('/accounts/'+id,{locked:false});
-  CU={...acc,id,locked:false};
+  CU={...acc,id};
   localStorage.setItem('__session',id);
   await afterLogin();
 }
 async function afterLogin(){
+  CU._loginAt=Date.now();
   await loadSecs();showS('sc-main');updateBadge();renderSBar();showNoSec();
   initFCM();startSSE();
 }
@@ -560,13 +557,16 @@ async function _poll(){
       if(_lastDutyHash&&_lastDutyHash!==dutyHash)renderC();
       _lastDutyHash=dutyHash;
     }
-    // 4. Check if captain forced logout
+    // 4. Check for force-logout signal (captain reset all sessions)
     if(!isCap()){
-      const acc=await fbG('/accounts/'+CU.id);
-      if(acc?.locked===true){
-        await fbP('/accounts/'+CU.id,{locked:false});
-        showToast('Сессия сброшена капитаном');
-        setTimeout(()=>doLogout(),1500);
+      const sys=await fbG('/system/forceLogout');
+      if(sys?.at){
+        const signalTime=new Date(sys.at).getTime();
+        const loginTime=CU._loginAt||0;
+        if(signalTime>loginTime){
+          showToast('Сессия сброшена капитаном. Войдите снова.');
+          setTimeout(()=>doLogout(),2000);
+        }
       }
     }
   }catch(e){}
@@ -1025,9 +1025,11 @@ function openSettings(){
     <input class="minp" id="sp2" type="password" placeholder="Повторите" style="margin-top:8px">
     <button class="mbtn" onclick="chPass('sp1','sp2','smsg')">СМЕНИТЬ ПАРОЛЬ</button>
     <button class="mbtn neutral" id="notif-btn" onclick="enableNotifs()" style="margin-top:8px">🔔 Уведомления: ${notifStatus}</button>
-    ${isCap()?`<button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>`:''}
+    ${isCap()?`
+    <button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
+    <button class="mbtn danger" onclick="resetSess()" style="margin-top:8px">СБРОСИТЬ ВСЕ СЕССИИ</button>
+    <button class="mbtn danger" onclick="deleteAllCrew()" style="margin-top:4px">УДАЛИТЬ ВСЕХ УЧАСТНИКОВ</button>`:''}
     <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
-    ${isCap()?`<button class="mbtn danger" onclick="resetSess()" style="margin-top:4px">СБРОСИТЬ ВСЕ СЕССИИ</button>`:''}
     <div class="mmsg" id="smsg"></div>`;
   openM('m-settings');
   loadSettingsPoints();
@@ -1083,18 +1085,24 @@ async function chPass(id1,id2,msgId){
   el1.value='';el2.value='';
 }
 async function resetSess(){
-  // Lock all accounts — forces everyone to re-login
-  const accs=await fbG('/accounts')||{};
-  const updates={};
-  Object.keys(accs).forEach(id=>{
-    if(id!==CU.id)updates['/accounts/'+id+'/locked']=true;
-  });
-  // Apply all at once via patch to root
-  if(Object.keys(updates).length>0){
-    await fetch(DB+'/.json',{method:'PATCH',body:JSON.stringify(updates)});
-  }
-  const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Все сессии сброшены';}
+  // Write a reset timestamp — all devices will see it on next poll and logout
+  await fbS('/system/forceLogout',{at:new Date().toISOString(),by:CU.id});
+  const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Сигнал отправлен всем устройствам';}
   showToast('✓ Все сессии сброшены');
+}
+async function deleteAllCrew(){
+  if(!confirm('Удалить все аккаунты кроме капитана? Это действие нельзя отменить.'))return;
+  const accs=await fbG('/accounts')||{};
+  for(const [id,acc] of Object.entries(accs)){
+    if(!acc.isCaptain){await fbD('/accounts/'+id);}
+  }
+  // Also clear all points for non-captains
+  const pts=await fbG('/points')||{};
+  for(const [id] of Object.entries(pts)){
+    if(id!==CU.id){await fbD('/points/'+id);}
+  }
+  const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Все участники удалены';}
+  showToast('✓ Все аккаунты кроме капитана удалены');
 }
 
 // ═══ MANAGE SECTIONS ═════════════════════════════════════════════
