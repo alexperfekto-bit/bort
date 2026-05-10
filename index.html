@@ -669,9 +669,11 @@ function mkAddForm(date,area){
     await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
     playSound('add');
     showToast('✓ Задача добавлена');
-    // Re-render the day content below calendar
-    if(curTab==='calendar'){renderCalendarDay(date);}
-    else{renderC();}
+    // Mark calendar dot for this date without full re-render
+    const dayNum=new Date(date+'T00:00:00').getDate();
+    document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.add('has-tasks');});
+    // Refresh only the day section below calendar
+    renderCalendarDay(date);
   };
   cancelBtn.onclick=()=>{
     if(curTab==='calendar'){renderCalendarDay(date);}
@@ -731,6 +733,7 @@ function mkTask(task,date){
     playSound('trash');
     await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
     showToast('🗑 Удалено');
+    // Item already flew off screen via swipe animation, no re-render needed
   }:null;
 
   setupSwipeTask(item,cont,sbgR,sbgL,completeCb,deleteCb);
@@ -740,11 +743,12 @@ async function completeTask(tid,date){
   const tasks=await fbG('/tasks/'+curSec+'/'+date)||{};
   const task=o2a(tasks).find(t=>t.id===tid);
   await fbP('/tasks/'+curSec+'/'+date+'/'+tid,{done:true,completedAt:new Date().toISOString(),completedByAccId:CU?.id,completedByName:CU?.name,completedByRole:CU?.role});
-  // Award 1 point to completer
   if(CU?.id){
     await addPoints(CU.id,1,'✓ Задача выполнена: '+(task?.text||'').slice(0,30));
   }
   playSound('done');showToast('✓ Выполнено +1 балл');
+  // Item already flew off screen via swipe — polling will update progress bar
+  updateProg();
 }
 
 // ═══ POINTS SYSTEM ═══════════════════════════════════════════════
@@ -952,7 +956,20 @@ function updateDutyBottom(date,dutyRaw,canAssign,area,MN){
   if(duty){
     const row=mk('div','duty-assigned-row');
     row.appendChild(mkBadge(duty.name,duty.role));
-    if(canAssign){const un=mk('button','smib del');un.textContent='Снять';un.onclick=async()=>{await fbD('/duty/'+date);renderC();};row.appendChild(un);}
+    if(canAssign){
+      const un=mk('button','smib del');un.textContent='Снять';
+      un.onclick=async()=>{
+        await fbD('/duty/'+date);
+        // Update only the dot on calendar grid — remove has-duty class
+        const calDays=document.querySelectorAll('.cal-day');
+        calDays.forEach(el=>{if(el.textContent==String(d.getDate())&&el.classList.contains('has-duty'))el.classList.remove('has-duty');});
+        // Re-render just the bottom
+        const newDutyRaw={...dutyRaw};delete newDutyRaw[date];
+        updateDutyBottom(date,newDutyRaw,canAssign,area,MN);
+        showToast('✓ Дежурный снят');
+      };
+      row.appendChild(un);
+    }
     bot.appendChild(row);
   }else{
     const em=mk('div','duty-empty-note');em.textContent='Дежурный не назначен';bot.appendChild(em);
@@ -975,8 +992,21 @@ async function openAssignModal(date){
     const item=mk('div','assign-person');
     item.innerHTML=`<div><div class="ap-name">${p.name}</div><div class="ap-role">${p.role}</div></div><span style="color:var(--gold);font-size:18px">›</span>`;
     item.onclick=async()=>{
-      await fbS('/duty/'+assignDate,{name:p.name,role:p.role,accId:p.id,assignedBy:CU.name,assignedAt:new Date().toISOString()});
-      closeM('m-assign');renderC();showToast('✓ Назначен: '+p.name);
+      const entry={name:p.name,role:p.role,accId:p.id,assignedBy:CU.name,assignedAt:new Date().toISOString()};
+      await fbS('/duty/'+assignDate,entry);
+      closeM('m-assign');
+      // Add dot on calendar day without re-render
+      const d=new Date(assignDate+'T00:00:00');
+      document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(d.getDate()))el.classList.add('has-duty');});
+      // Update only bottom section
+      const area=$('carea');
+      const sec=sections.find(s=>s.id===curSec);
+      const dutyEditRoles=sec?.editRoles||[];
+      const canAssign=isCap()||(dutyEditRoles.length>0&&dutyEditRoles.includes(CU?.role));
+      const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+      const dutyRaw=await fbG('/duty')||{};
+      updateDutyBottom(assignDate,dutyRaw,canAssign,area,MN);
+      showToast('✓ Назначен: '+p.name);
     };
     list.appendChild(item);
   });
@@ -1038,11 +1068,28 @@ function mkDoneEl(task,date,isToday){
       showToast(msg);
     }
     await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});
-    renderC();
+    item.style.transition='opacity .25s,max-height .3s';item.style.opacity='0';item.style.overflow='hidden';
+    setTimeout(()=>{item.remove();cleanupDoneSeps();},280);
   }:null;
-  const delCb=canDel?async()=>{await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);renderC();showToast('🗑 Удалено');}:null;
+  const delCb=canDel?async()=>{
+    await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);
+    item.style.transition='opacity .25s,max-height .3s';item.style.opacity='0';item.style.overflow='hidden';
+    setTimeout(()=>{item.remove();cleanupDoneSeps();},280);
+    showToast('🗑 Удалено');
+  }:null;
   setupSwipeDone(item,cont,bgRev,bgDel,revCb,delCb);
   return item;
+}
+
+// Remove orphan date separators in done list (when all items under a sep are removed)
+function cleanupDoneSeps(){
+  const area=$('carea');if(!area)return;
+  area.querySelectorAll('.done-sep').forEach(sep=>{
+    let next=sep.nextSibling;
+    let hasItem=false;
+    while(next&&!next.classList?.contains('done-sep')){if(next.classList?.contains('done-item'))hasItem=true;next=next.nextSibling;}
+    if(!hasItem)sep.remove();
+  });
 }
 
 // ═══ SETTINGS ════════════════════════════════════════════════════
