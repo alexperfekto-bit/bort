@@ -687,15 +687,18 @@ function mkAddForm(date,area){
 function mkTask(task,date){
   const sec=sections.find(s=>s.id===curSec);
   const editable=isCap()||task.authorAccId===CU?.id;
-  const canSwipe=curSec==='captain'?isCap():(sec?canEdit(sec):false);
+  const canSwipeComplete=curSec==='captain'?isCap():(sec?canEdit(sec):false);
+  const canDelete=isCap()||task.authorAccId===CU?.id;
   const item=mk('div','titem');
-  const sbg=mk('div','tswbg-r');sbg.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbg);
+  // Right swipe = complete (green)
+  const sbgR=mk('div','tswbg-r');sbgR.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbgR);
+  // Left swipe = delete (red)
+  const sbgL=mk('div','tswbg-l');sbgL.innerHTML='<span style="font-size:20px;color:#fff">🗑</span>';item.appendChild(sbgL);
   const cont=mk('div','tcont');
   const row=mk('div','trow');
 
   let txt,sv;
   if(editable){
-    // Use textarea for reliable iOS input
     txt=document.createElement('textarea');
     txt.value=task.text||'';
     txt.placeholder='Опишите задачу...';
@@ -714,20 +717,23 @@ function mkTask(task,date){
     txt=mk('div','ttxt');
     txt.textContent=task.text||'';
     txt.style.cursor='default';
-    sv=mk('button','save-btn'); // hidden placeholder
+    sv=mk('button','save-btn');
   }
 
-  const dl=mk('button','del-btn');dl.textContent='×';
-  if(editable){
-    dl.onclick=async()=>await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
-  }else{dl.style.display='none';}
-
-  row.appendChild(txt);row.appendChild(dl);cont.appendChild(row);
+  row.appendChild(txt);cont.appendChild(row);
   if(editable)cont.appendChild(sv);
   const meta=mk('div','tmeta');const top=mk('div','mtop');top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));meta.appendChild(top);
   const bot=mk('div','mbot');bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
   cont.appendChild(meta);item.appendChild(cont);
-  if(canSwipe)setupSwipeTask(item,cont,sbg,()=>completeTask(task.id,date));
+
+  const completeCb=canSwipeComplete?()=>completeTask(task.id,date):null;
+  const deleteCb=canDelete?async()=>{
+    playSound('trash');
+    await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
+    showToast('🗑 Удалено');
+  }:null;
+
+  setupSwipeTask(item,cont,sbgR,sbgL,completeCb,deleteCb);
   return item;
 }
 async function completeTask(tid,date){
@@ -759,20 +765,44 @@ async function getPointsHistory(accId){
   return o2a(raw).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,5);
 }
 
-// ═══ SWIPE — tasks (right only = complete) ════════════════════════
-function setupSwipeTask(item,cont,bg,cb){
+// ═══ SWIPE — tasks (right=complete green, left=delete red) ════════
+function setupSwipeTask(item,cont,bgR,bgL,cbComplete,cbDelete){
   let sx=0,sy=0,dx=0,act=false,dn=false;const T=80;
   item.addEventListener('touchstart',e=>{if(dn)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;act=true;dx=0;},{passive:true});
   item.addEventListener('touchmove',e=>{
-    if(!act||dn)return;dx=e.touches[0].clientX-sx;const dy=Math.abs(e.touches[0].clientY-sy);
-    if(dy>20&&Math.abs(dx)<dy){act=false;return;}if(dx<0){dx=0;return;}
-    const p=Math.min(dx/T,1);cont.style.transform=`translateX(${dx}px)`;bg.style.opacity=p;
-    cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('greening',p>0);
+    if(!act||dn)return;
+    dx=e.touches[0].clientX-sx;
+    const dy=Math.abs(e.touches[0].clientY-sy);
+    if(dy>20&&Math.abs(dx)<dy){act=false;return;}
+    const p=Math.min(Math.abs(dx)/T,1);
+    cont.style.transform=`translateX(${dx}px)`;
+    if(dx>0){
+      // Right → complete (green)
+      if(cbComplete){bgR.style.opacity=p;bgL.style.opacity=0;cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('greening',p>0);cont.classList.remove('reddening');}
+      else{dx=0;} // can't complete
+    } else {
+      // Left → delete (red)
+      if(cbDelete){bgL.style.opacity=p;bgR.style.opacity=0;cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('reddening',p>0);cont.classList.remove('greening');}
+      else{dx=0;} // can't delete
+    }
   },{passive:true});
   item.addEventListener('touchend',()=>{
     if(!act)return;act=false;
-    if(dx>=T){dn=true;cont.style.transform=`translateX(${window.innerWidth}px)`;bg.style.opacity=1;cont.style.transition='transform .3s ease';setTimeout(cb,280);}
-    else{cont.style.transform='';bg.style.opacity=0;cont.classList.remove('greening');}dx=0;
+    if(dx>=T&&cbComplete){
+      dn=true;
+      cont.style.transform=`translateX(${window.innerWidth}px)`;bgR.style.opacity=1;
+      cont.style.transition='transform .3s ease';
+      setTimeout(cbComplete,280);
+    } else if(dx<=-T&&cbDelete){
+      dn=true;
+      cont.style.transform=`translateX(-${window.innerWidth}px)`;bgL.style.opacity=1;
+      cont.style.transition='transform .3s ease';
+      setTimeout(cbDelete,280);
+    } else {
+      cont.style.transform='';bgR.style.opacity=0;bgL.style.opacity=0;
+      cont.classList.remove('greening','reddening');
+    }
+    dx=0;
   });
 }
 
@@ -1154,10 +1184,27 @@ function openM(id){$(id).classList.add('open');}
 function closeM(id){$(id).classList.remove('open');}
 document.querySelectorAll('.moverlay').forEach(m=>{m.addEventListener('touchstart',e=>{if(e.target===m)closeM(m.id);});m.addEventListener('click',e=>{if(e.target===m)closeM(m.id);});});
 function playSound(type){
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
-  if(type==='add'){o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.setValueAtTime(1100,ctx.currentTime+.1);g.gain.setValueAtTime(.12,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);o.start();o.stop(ctx.currentTime+.3);}
-  else if(type==='done'){o.frequency.setValueAtTime(660,ctx.currentTime);o.frequency.setValueAtTime(880,ctx.currentTime+.1);o.frequency.setValueAtTime(1320,ctx.currentTime+.22);g.gain.setValueAtTime(.12,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.45);o.start();o.stop(ctx.currentTime+.45);}
-  else if(type==='notify'){o.frequency.setValueAtTime(440,ctx.currentTime);o.frequency.setValueAtTime(554,ctx.currentTime+.15);g.gain.setValueAtTime(.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);}}catch(e){}}
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const g=ctx.createGain();g.connect(ctx.destination);
+    if(type==='add'){const o=ctx.createOscillator();o.connect(g);o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.setValueAtTime(1100,ctx.currentTime+.1);g.gain.setValueAtTime(.12,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);o.start();o.stop(ctx.currentTime+.3);}
+    else if(type==='done'){const o=ctx.createOscillator();o.connect(g);o.frequency.setValueAtTime(660,ctx.currentTime);o.frequency.setValueAtTime(880,ctx.currentTime+.1);o.frequency.setValueAtTime(1320,ctx.currentTime+.22);g.gain.setValueAtTime(.12,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.45);o.start();o.stop(ctx.currentTime+.45);}
+    else if(type==='notify'){const o=ctx.createOscillator();o.connect(g);o.frequency.setValueAtTime(440,ctx.currentTime);o.frequency.setValueAtTime(554,ctx.currentTime+.15);g.gain.setValueAtTime(.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);}
+    else if(type==='trash'){
+      const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.22),ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++){const t=i/ctx.sampleRate;d[i]=(Math.random()*2-1)*Math.exp(-t*20)*.5+Math.sin(2*Math.PI*900*t)*Math.exp(-t*28)*.12+Math.sin(2*Math.PI*1400*t)*Math.exp(-t*35)*.08;}
+      const src=ctx.createBufferSource();src.buffer=buf;
+      const flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=2500;
+      src.connect(flt);flt.connect(g);
+      g.gain.setValueAtTime(.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);
+      src.start();src.stop(ctx.currentTime+.22);
+      const o2=ctx.createOscillator();const g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);
+      o2.frequency.setValueAtTime(130,ctx.currentTime+.1);o2.frequency.exponentialRampToValueAtTime(45,ctx.currentTime+.2);
+      g2.gain.setValueAtTime(.22,ctx.currentTime+.1);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);
+      o2.start(ctx.currentTime+.1);o2.stop(ctx.currentTime+.2);
+    }
+  }catch(e){}}
 function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
 
 init();
