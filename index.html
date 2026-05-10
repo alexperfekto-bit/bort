@@ -1249,7 +1249,11 @@ async function renderDone(area){
   });
 }
 function mkDoneEl(task,date,isToday){
-  const canRev=isToday&&(isCap()||task.completedByAccId===CU?.id);
+  // Allow revert within 7 days of completion, not just today
+  const completedAt=task.completedAt?new Date(task.completedAt):null;
+  const daysSinceComplete=completedAt?(Date.now()-completedAt.getTime())/(1000*60*60*24):999;
+  const withinWindow=daysSinceComplete<=7;
+  const canRev=withinWindow&&(isCap()||task.completedByAccId===CU?.id);
   const canDel=isCap()||task.authorAccId===CU?.id;
   const item=mk('div','done-item');
   const bgRev=mk('div','done-swbg-revert');bgRev.innerHTML='<span style="font-size:18px;color:rgba(255,255,255,.7)">↩</span>';item.appendChild(bgRev);
@@ -1270,7 +1274,6 @@ function mkDoneEl(task,date,isToday){
   if(canRev){const h=mk('span','revert-hint');h.textContent=' ← вернуть';bot.appendChild(h);}
   if(canDel){const h=mk('span','del-hint');h.textContent=' → удалить';bot.appendChild(h);}
   cont.appendChild(bot);item.appendChild(cont);
-  const SENIOR_ROLES=['Капитан','Старший помощник','Старшая стюардесса'];
   const revCb=canRev?async()=>{
     if(task.completedByAccId){
       const isSelf=task.completedByAccId===CU?.id;
