@@ -450,10 +450,11 @@ async function doLogin(){
   const accs=await fbG('/accounts')||{};
   const entry=Object.entries(accs).find(([,a])=>a.name.toLowerCase()===name.toLowerCase());
   if(!entry){err.textContent='Пользователь не найден';return;}
-  const [id,acc]=entry;if(acc.passHash!==hashP(pass)){err.textContent='Неверный пароль';return;}
-  // Check if account is locked (forced logout by captain)
-  if(acc.locked){err.textContent='Сессия сброшена. Обратитесь к капитану.';return;}
-  CU={...acc,id};
+  const [id,acc]=entry;
+  if(acc.passHash!==hashP(pass)){err.textContent='Неверный пароль';return;}
+  // Clear locked flag — user re-authenticated successfully
+  if(acc.locked)await fbP('/accounts/'+id,{locked:false});
+  CU={...acc,id,locked:false};
   localStorage.setItem('__session',id);
   await afterLogin();
 }
