@@ -126,6 +126,7 @@ select.inp{-webkit-appearance:none;appearance:none;background-color:var(--surf2)
 .done-mtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .done-mbot{font-size:9px;color:#383b44;letter-spacing:.4px;}
 .sec-badge{font-size:9px;color:var(--dim);border:1px solid #2a2d35;border-radius:99px;padding:1px 8px;white-space:nowrap;}
+.redo-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.8px;padding:2px 8px;border-radius:99px;background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.4);white-space:nowrap;}
 .revert-hint{color:#4a7a4a;}.del-hint{color:#7a3a3a;}
 /* MODALS */
 .moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s;}
@@ -664,16 +665,21 @@ function mkAddForm(date,area){
   saveBtn.onclick=async()=>{
     const text=inp.value.trim();
     if(!text){inp.focus();return;}
+    saveBtn.disabled=true;saveBtn.textContent='Сохраняется...';
     const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
     const task={id,text,done:false,authorName:CU.name,authorRole:isCap()?'captain':'crew',authorRoleLabel:CU.role,authorAccId:CU.id,section:curSec,createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
+    // Pause polling briefly to prevent double-render
+    if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null;}
     await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
     playSound('add');
     showToast('✓ Задача добавлена');
-    // Mark calendar dot for this date without full re-render
+    // Mark calendar dot for this date
     const dayNum=new Date(date+'T00:00:00').getDate();
     document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.add('has-tasks');});
-    // Refresh only the day section below calendar
+    // Refresh only the day section
     renderCalendarDay(date);
+    // Resume polling after render
+    setTimeout(()=>{_pollTimer=setInterval(_poll,1500);},500);
   };
   cancelBtn.onclick=()=>{
     if(curTab==='calendar'){renderCalendarDay(date);}
@@ -712,8 +718,10 @@ function mkTask(task,date){
     txt.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sv.click();}});
     sv.onclick=async()=>{
       const text=txt.value.trim();
-      await fbP('/tasks/'+curSec+'/'+date+'/'+task.id,{text});
+      if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null;}
+      await fbP('/tasks/'+curSec+'/'+date+'/'+task.id,{text,needsRedo:false});
       sv.classList.remove('show');txt.blur();
+      setTimeout(()=>{_pollTimer=setInterval(_poll,1500);},500);
     };
   } else {
     txt=mk('div','ttxt');
@@ -724,7 +732,9 @@ function mkTask(task,date){
 
   row.appendChild(txt);cont.appendChild(row);
   if(editable)cont.appendChild(sv);
-  const meta=mk('div','tmeta');const top=mk('div','mtop');top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));meta.appendChild(top);
+  const meta=mk('div','tmeta');const top=mk('div','mtop');top.appendChild(mkBadge(task.authorName,task.authorRoleLabel||task.authorRole));
+  if(task.needsRedo){const rb=mk('span','redo-badge');rb.textContent='↩ ПЕРЕДЕЛАТЬ';top.appendChild(rb);}
+  meta.appendChild(top);
   const bot=mk('div','mbot');bot.textContent='создано '+fTime(task.createdAt);meta.appendChild(bot);
   cont.appendChild(meta);item.appendChild(cont);
 
@@ -781,27 +791,40 @@ function setupSwipeTask(item,cont,bgR,bgL,cbComplete,cbDelete){
     const p=Math.min(Math.abs(dx)/T,1);
     cont.style.transform=`translateX(${dx}px)`;
     if(dx>0){
-      // Right → complete (green)
       if(cbComplete){bgR.style.opacity=p;bgL.style.opacity=0;cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('greening',p>0);cont.classList.remove('reddening');}
-      else{dx=0;} // can't complete
+      else dx=0;
     } else {
-      // Left → delete (red)
       if(cbDelete){bgL.style.opacity=p;bgR.style.opacity=0;cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.toggle('reddening',p>0);cont.classList.remove('greening');}
-      else{dx=0;} // can't delete
+      else dx=0;
     }
   },{passive:true});
   item.addEventListener('touchend',()=>{
     if(!act)return;act=false;
     if(dx>=T&&cbComplete){
       dn=true;
-      cont.style.transform=`translateX(${window.innerWidth}px)`;bgR.style.opacity=1;
+      // Animate out then remove from DOM
+      item.style.transition='max-height .35s ease,opacity .35s ease,margin .35s ease';
+      item.style.maxHeight=item.offsetHeight+'px';
       cont.style.transition='transform .3s ease';
-      setTimeout(cbComplete,280);
+      cont.style.transform=`translateX(${window.innerWidth}px)`;
+      bgR.style.opacity=1;
+      setTimeout(()=>{
+        item.style.maxHeight='0';item.style.opacity='0';item.style.marginBottom='0';
+        cbComplete();
+      },300);
+      setTimeout(()=>item.remove(),650);
     } else if(dx<=-T&&cbDelete){
       dn=true;
-      cont.style.transform=`translateX(-${window.innerWidth}px)`;bgL.style.opacity=1;
+      item.style.transition='max-height .35s ease,opacity .35s ease,margin .35s ease';
+      item.style.maxHeight=item.offsetHeight+'px';
       cont.style.transition='transform .3s ease';
-      setTimeout(cbDelete,280);
+      cont.style.transform=`translateX(-${window.innerWidth}px)`;
+      bgL.style.opacity=1;
+      setTimeout(()=>{
+        item.style.maxHeight='0';item.style.opacity='0';item.style.marginBottom='0';
+        cbDelete();
+      },300);
+      setTimeout(()=>item.remove(),650);
     } else {
       cont.style.transform='';bgR.style.opacity=0;bgL.style.opacity=0;
       cont.classList.remove('greening','reddening');
@@ -820,14 +843,32 @@ function setupSwipeDone(item,cont,bgRevert,bgDelete,cbRevert,cbDelete){
     if(dy>20&&Math.abs(dx)<dy){act=false;return;}
     const p=Math.min(Math.abs(dx)/T,1);
     cont.style.transform=`translateX(${dx}px)`;
-    if(dx<0){bgRevert.style.opacity=p;bgDelete.style.opacity=0;cont.style.setProperty('--gp',Math.round(p*100)+'%');cont.classList.remove('reddening');}
+    if(dx<0){bgRevert.style.opacity=p;bgDelete.style.opacity=0;}
     else{bgDelete.style.opacity=p;bgRevert.style.opacity=0;cont.classList.toggle('reddening',p>0);}
   },{passive:true});
   item.addEventListener('touchend',()=>{
     if(!act)return;act=false;
-    if(dx<=-T&&cbRevert){dn=true;cont.style.transform=`translateX(-${window.innerWidth}px)`;bgRevert.style.opacity=1;cont.style.transition='transform .3s ease';setTimeout(cbRevert,280);}
-    else if(dx>=T&&cbDelete){dn=true;cont.style.transform=`translateX(${window.innerWidth}px)`;bgDelete.style.opacity=1;cont.style.transition='transform .3s ease';setTimeout(cbDelete,280);}
-    else{cont.style.transform='';bgRevert.style.opacity=0;bgDelete.style.opacity=0;cont.classList.remove('reddening');}
+    if(dx<=-T&&cbRevert){
+      dn=true;
+      item.style.transition='max-height .35s ease,opacity .35s ease,margin .35s ease';
+      item.style.maxHeight=item.offsetHeight+'px';
+      cont.style.transition='transform .3s ease';
+      cont.style.transform=`translateX(-${window.innerWidth}px)`;
+      bgRevert.style.opacity=1;
+      setTimeout(()=>{item.style.maxHeight='0';item.style.opacity='0';item.style.marginBottom='0';cbRevert();},300);
+      setTimeout(()=>{item.remove();cleanupDoneSeps();},650);
+    } else if(dx>=T&&cbDelete){
+      dn=true;
+      item.style.transition='max-height .35s ease,opacity .35s ease,margin .35s ease';
+      item.style.maxHeight=item.offsetHeight+'px';
+      cont.style.transition='transform .3s ease';
+      cont.style.transform=`translateX(${window.innerWidth}px)`;
+      bgDelete.style.opacity=1;
+      setTimeout(()=>{item.style.maxHeight='0';item.style.opacity='0';item.style.marginBottom='0';cbDelete();},300);
+      setTimeout(()=>{item.remove();cleanupDoneSeps();},650);
+    } else {
+      cont.style.transform='';bgRevert.style.opacity=0;bgDelete.style.opacity=0;cont.classList.remove('reddening');
+    }
     dx=0;
   });
 }
@@ -1016,10 +1057,22 @@ async function openAssignModal(date){
 async function renderDone(area){
   area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
   const today=todayS();const allDone=[];
-  const secsToShow=curSec==='captain'?(isCap()?[{id:'captain',name:'Капитан'}]:[]):visSecs().filter(s=>!s.isDuty);
-  for(const sec of secsToShow){
-    const raw=await fbG('/tasks/'+sec.id)||{};
-    Object.entries(raw||{}).forEach(([date,dateObj])=>{o2a(dateObj||{}).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:sec.name,sectionId:sec.id}));});
+  // Captain section tasks — only captain can see
+  if(isCap()){
+    const raw=await fbG('/tasks/captain')||{};
+    Object.entries(raw||{}).forEach(([date,dateObj])=>{
+      o2a(dateObj||{}).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:'Капитан',sectionId:'captain'}));
+    });
+  }
+  // Non-captain sections — all crew see their accessible sections
+  if(curSec!=='captain'){
+    const secsToShow=visSecs().filter(s=>!s.isDuty);
+    for(const sec of secsToShow){
+      const raw=await fbG('/tasks/'+sec.id)||{};
+      Object.entries(raw||{}).forEach(([date,dateObj])=>{
+        o2a(dateObj||{}).filter(t=>t.done&&t.text&&t.text.trim()).forEach(t=>allDone.push({...t,date,sectionLabel:sec.name,sectionId:sec.id}));
+      });
+    }
   }
   area.innerHTML='';
   allDone.sort((a,b)=>new Date(b.completedAt||b.createdAt)-new Date(a.completedAt||a.createdAt));
@@ -1057,25 +1110,23 @@ function mkDoneEl(task,date,isToday){
   const SENIOR_ROLES=['Капитан','Старший помощник','Старшая стюардесса'];
   const revCb=canRev?async()=>{
     if(task.completedByAccId){
-      // Self-revert = -1, senior revert = -2
       const isSelf=task.completedByAccId===CU?.id;
       const delta=isSelf?-1:-2;
-      const reason=isSelf
-        ?'↩ Сам отменил выполнение: '+(task.text||'').slice(0,30)
-        :'✗ Отклонено вышестоящим: '+(task.text||'').slice(0,30);
+      const reason=isSelf?'↩ Сам отменил: '+(task.text||'').slice(0,30):'✗ Отклонено вышестоящим: '+(task.text||'').slice(0,30);
       await addPoints(task.completedByAccId,delta,reason);
-      const msg=isSelf?'↩ Возвращено. -1 балл':'↩ Возвращено. -2 балла исполнителю';
-      showToast(msg);
+      showToast(isSelf?'↩ Возвращено. -1 балл':'↩ Возвращено. -2 балла исполнителю');
     }
-    await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null});
-    item.style.transition='opacity .25s,max-height .3s';item.style.opacity='0';item.style.overflow='hidden';
-    setTimeout(()=>{item.remove();cleanupDoneSeps();},280);
+    // Return to original section with "переделать" mark
+    await fbP('/tasks/'+task.sectionId+'/'+date+'/'+task.id,{
+      done:false,completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null,
+      needsRedo:true
+    });
+    // DOM removal handled by setupSwipeDone animation
   }:null;
   const delCb=canDel?async()=>{
     await fbD('/tasks/'+task.sectionId+'/'+date+'/'+task.id);
-    item.style.transition='opacity .25s,max-height .3s';item.style.opacity='0';item.style.overflow='hidden';
-    setTimeout(()=>{item.remove();cleanupDoneSeps();},280);
     showToast('🗑 Удалено');
+    // DOM removal handled by setupSwipeDone animation
   }:null;
   setupSwipeDone(item,cont,bgRev,bgDel,revCb,delCb);
   return item;
