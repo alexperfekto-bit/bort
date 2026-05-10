@@ -665,29 +665,33 @@ function mkAddForm(date,area){
   saveBtn.onclick=async()=>{
     const text=inp.value.trim();
     if(!text){inp.focus();return;}
-    saveBtn.disabled=true;saveBtn.textContent='Сохраняется...';
+    saveBtn.disabled=true;cancelBtn.disabled=true;
+    // Stop polling to prevent double-render
+    if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null;}
     const id='t'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
     const task={id,text,done:false,authorName:CU.name,authorRole:isCap()?'captain':'crew',authorRoleLabel:CU.role,authorAccId:CU.id,section:curSec,createdAt:new Date().toISOString(),completedAt:null,completedByAccId:null,completedByName:null,completedByRole:null};
-    // Pause polling briefly to prevent double-render
-    if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null;}
+    // Replace form with the new task card immediately (no flicker)
+    const taskEl=mkTask(task,date);
+    form.replaceWith(taskEl);
+    // Add button back
+    const sec=sections.find(s=>s.id===curSec);
+    const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
+    if(ce){
+      const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
+      ab.onclick=()=>{ab.replaceWith(mkAddForm(date,area));};
+      area.appendChild(ab);
+    }
+    // Save to Firebase in background
     await fbS('/tasks/'+curSec+'/'+date+'/'+id,task);
-    playSound('add');
-    showToast('✓ Задача добавлена');
-    // Mark calendar dot for this date
-    const dayNum=new Date(date+'T00:00:00').getDate();
-    document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.add('has-tasks');});
-    // Refresh only the day section
-    renderCalendarDay(date);
-    // Resume polling after render
-    setTimeout(()=>{_pollTimer=setInterval(_poll,1500);},500);
+    playSound('add');showToast('✓ Задача добавлена');
+    // Mark calendar dot
+    document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(new Date(date+'T00:00:00').getDate()))el.classList.add('has-tasks');});
+    // Resume polling
+    setTimeout(()=>{_pollTimer=setInterval(_poll,1500);},1000);
   };
-  cancelBtn.onclick=()=>{
-    if(curTab==='calendar'){renderCalendarDay(date);}
-    else{renderC();}
-  };
+  cancelBtn.onclick=()=>{form.remove();};
   saveRow.appendChild(saveBtn);saveRow.appendChild(cancelBtn);
   form.appendChild(inp);form.appendChild(saveRow);
-  // Auto-focus after append
   setTimeout(()=>inp.focus(),100);
   return form;
 }
@@ -1168,7 +1172,7 @@ function openSettings(){
     ${isCap()?`
     <button class="mbtn neutral" style="margin-top:8px" onclick="closeM('m-settings');openManSecs()">УПРАВЛЕНИЕ РАЗДЕЛАМИ</button>
     <button class="mbtn danger" onclick="resetSess()" style="margin-top:8px">СБРОСИТЬ ВСЕ СЕССИИ</button>
-    <button class="mbtn danger" onclick="deleteAllCrew()" style="margin-top:4px">УДАЛИТЬ ВСЕХ УЧАСТНИКОВ</button>`:''}
+    <button class="mbtn danger" onclick="openDeleteUser()" style="margin-top:4px">УДАЛИТЬ ПОЛЬЗОВАТЕЛЯ</button>`:''}
     <button class="mbtn neutral" onclick="doLogout()" style="margin-top:8px">ВЫЙТИ</button>
     <div class="mmsg" id="smsg"></div>`;
   openM('m-settings');
@@ -1230,19 +1234,69 @@ async function resetSess(){
   const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Сигнал отправлен всем устройствам';}
   showToast('✓ Все сессии сброшены');
 }
-async function deleteAllCrew(){
-  if(!confirm('Удалить все аккаунты кроме капитана? Это действие нельзя отменить.'))return;
+async function openDeleteUser(){
+  closeM('m-settings');
+  // Build user list modal dynamically
+  let overlay=document.getElementById('m-del-user');
+  if(!overlay){
+    overlay=mk('div','moverlay');overlay.id='m-del-user';
+    const sheet=mk('div','msheet');
+    const handle=mk('div','mhandle');
+    const title=mk('div','mtitle');title.textContent='Удалить пользователя';
+    const sub=mk('div','msub');sub.textContent='Свайп влево для удаления';
+    const list=mk('div','');list.id='del-user-list';
+    sheet.appendChild(handle);sheet.appendChild(title);sheet.appendChild(sub);sheet.appendChild(list);
+    overlay.appendChild(sheet);document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closeM('m-del-user');});
+  }
+  openM('m-del-user');
+  await loadDeleteUserList();
+}
+async function loadDeleteUserList(){
+  const list=$('del-user-list');if(!list)return;
+  list.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:12px">Загрузка...</div>';
   const accs=await fbG('/accounts')||{};
-  for(const [id,acc] of Object.entries(accs)){
-    if(!acc.isCaptain){await fbD('/accounts/'+id);}
-  }
-  // Also clear all points for non-captains
-  const pts=await fbG('/points')||{};
-  for(const [id] of Object.entries(pts)){
-    if(id!==CU.id){await fbD('/points/'+id);}
-  }
-  const msg=$('smsg');if(msg){msg.style.color='var(--green)';msg.textContent='Все участники удалены';}
-  showToast('✓ Все аккаунты кроме капитана удалены');
+  const people=Object.entries(accs).map(([id,a])=>({...a,id})).filter(a=>!a.isCaptain).sort((a,b)=>a.name.localeCompare(b.name));
+  list.innerHTML='';
+  if(!people.length){list.innerHTML='<div style="color:var(--dim);font-size:12px;text-align:center;padding:12px">Нет зарегистрированных участников</div>';return;}
+  people.forEach(p=>{
+    const item=mk('div','');
+    item.style.cssText='position:relative;background:var(--bg);border:1px solid var(--bord);border-radius:12px;margin-bottom:8px;overflow:hidden;touch-action:pan-y;';
+    const bg=mk('div','');
+    bg.style.cssText='position:absolute;inset:0;background:linear-gradient(270deg,var(--red),#ff6b6b);opacity:0;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;border-radius:12px;';
+    bg.innerHTML='<span style="font-size:18px;color:#fff">🗑</span>';
+    const cont=mk('div','');
+    cont.style.cssText='position:relative;z-index:1;background:var(--bg);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;transform:translateX(0);';
+    const nm=mk('div','');nm.style.cssText='font-size:13px;font-weight:600;';nm.textContent=p.name;
+    const rl=mk('div','');rl.style.cssText='font-size:10px;color:var(--dim);';rl.textContent=p.role;
+    cont.appendChild(nm);cont.appendChild(rl);item.appendChild(bg);item.appendChild(cont);list.appendChild(item);
+    // Swipe left to delete
+    let sx=0,dx=0,act=false,dn=false;
+    item.addEventListener('touchstart',e=>{if(dn)return;sx=e.touches[0].clientX;act=true;dx=0;},{passive:true});
+    item.addEventListener('touchmove',e=>{
+      if(!act||dn)return;dx=e.touches[0].clientX-sx;if(dx>0){dx=0;return;}
+      const pp=Math.min(Math.abs(dx)/90,1);cont.style.transform=`translateX(${dx}px)`;bg.style.opacity=pp;
+    },{passive:true});
+    item.addEventListener('touchend',async()=>{
+      if(!act)return;act=false;
+      if(dx<=-90){
+        dn=true;
+        cont.style.transition='transform .3s';cont.style.transform=`translateX(-${window.innerWidth}px)`;bg.style.opacity=1;
+        item.style.transition='max-height .3s,opacity .3s,margin .3s';
+        item.style.maxHeight=item.offsetHeight+'px';
+        setTimeout(async()=>{
+          item.style.maxHeight='0';item.style.opacity='0';item.style.marginBottom='0';
+          await fbD('/accounts/'+p.id);
+          await fbD('/points/'+p.id);
+          showToast('🗑 '+p.name+' удалён');
+        },300);
+        setTimeout(()=>item.remove(),650);
+      } else {
+        cont.style.transform='';bg.style.opacity=0;
+      }
+      dx=0;
+    });
+  });
 }
 
 // ═══ MANAGE SECTIONS ═════════════════════════════════════════════
