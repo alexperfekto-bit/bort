@@ -736,26 +736,22 @@ function setTab(tab){curTab=tab;document.querySelectorAll('.ntab').forEach(t=>t.
 function renderC(){
   if(!curSec||_rendering)return;
   _rendering=true;
-  const area=$('carea');area.innerHTML='';
+  const area=$('carea');
   const sec=sections.find(s=>s.id===curSec);
   if(sec?.isDuty){renderDutyCalendar(area).finally(()=>{_rendering=false;});return;}
   if(curTab==='today')renderDay(area,todayS()).finally(()=>{_rendering=false;});
   else if(curTab==='tomorrow')renderDay(area,tomorrowS()).finally(()=>{_rendering=false;});
-  else if(curTab==='calendar'){renderCalendar(area).finally(()=>{_rendering=false;});}
-  else if(curTab==='done'){renderDone(area).finally(()=>{_rendering=false;});}
+  else if(curTab==='calendar')renderCalendar(area).finally(()=>{_rendering=false;});
+  else if(curTab==='done')renderDone(area).finally(()=>{_rendering=false;});
   else _rendering=false;
   updateProg();
 }
 
 // ═══ DAY TASKS ════════════════════════════════════════════════════
 async function renderDay(area,date){
-  // Only show loading on first render (area empty)
-  if(!area.querySelector('.dh')){
-    area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
-  }
+  area.innerHTML='';
   const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
   const tasks=o2a(raw).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
-  area.innerHTML='';
   const d=new Date(date+'T00:00:00');
   const DAYS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
   const MONS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -875,14 +871,16 @@ function mkTask(task,date){
     playSound('trash');
     await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
     showToast('🗑 Удалено');
-    // Update task cache so polling knows this is already removed
+    // Update task cache
     const cacheKey=curSec+'_'+date;
     if(_taskCache[cacheKey])delete _taskCache[cacheKey][task.id];
-    // Update calendar dot: check if any tasks remain for this date
+    // Check remaining tasks for dot update
     const remaining=Object.values(_taskCache[cacheKey]||{}).filter(t=>t.text?.trim());
     if(remaining.length===0){
       const dayNum=new Date(date+'T00:00:00').getDate();
       document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.remove('has-tasks');});
+      // Clean up empty date node in Firebase so dots never ghost
+      await fbD('/tasks/'+curSec+'/'+date);
     }
   }:null;
 
@@ -1037,11 +1035,16 @@ async function updateProg(){
 async function renderCalendar(area){
   const now=new Date();if(!calY){calY=now.getFullYear();calM=now.getMonth();}
   const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  // Load task dates for month
   const secTasks=await fbG('/tasks/'+curSec)||{};
   const monthPfx=calY+'-'+String(calM+1).padStart(2,'0');
-  const taskDates=new Set(Object.keys(secTasks||{}).filter(k=>k.startsWith(monthPfx)));
-  area.innerHTML=''; // clear after async load
+  // Only mark date if it has at least one task with actual text
+  const taskDates=new Set();
+  Object.entries(secTasks||{}).forEach(([date,dateObj])=>{
+    if(!date.startsWith(monthPfx))return;
+    const tasks=o2a(dateObj||{});
+    if(tasks.some(t=>t.text&&t.text.trim()))taskDates.add(date);
+  });
+  area.innerHTML='';
   const wrap=mk('div','cal-wrap');
   const hdr=mk('div','cal-hdr');
   hdr.innerHTML=`<button class="cal-nav" id="cal-prev">‹</button><div class="cal-mon">${MN[calM].toUpperCase()} ${calY}</div><button class="cal-nav" id="cal-next">›</button>`;
@@ -1100,7 +1103,6 @@ async function renderDutyCalendar(area){
   const sec=sections.find(s=>s.id===curSec);
   const dutyEditRoles=sec?.editRoles||[];
   const canAssign=isCap()||(dutyEditRoles.length>0&&dutyEditRoles.includes(CU?.role));
-  // Always fetch fresh from Firebase to avoid ghost data
   const dutyRaw=await fbG('/duty')||{};
   area.innerHTML='';
   const wrap=mk('div','cal-wrap');
@@ -1216,7 +1218,7 @@ async function openAssignModal(date,existingDuty){
 
 // ═══ DONE ════════════════════════════════════════════════════════
 async function renderDone(area){
-  area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
+  area.innerHTML='';
   const today=todayS();const allDone=[];
   // Captain section tasks — only captain can see
   if(isCap()){
