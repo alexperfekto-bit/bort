@@ -520,69 +520,139 @@ function stopSSE(){
 }
 function _onVisible(){
   if(document.visibilityState==='visible'){
-    // Page became visible — poll immediately and re-render current view
     _poll();
-    if(curSec)renderC();
   }
 }
+
+// Cache of last known tasks per section/date
+let _taskCache={}; // key: sec_date -> {id: taskObj}
+
 async function _poll(){
-  if(!CU?.id||_rendering)return;
+  if(!CU?.id)return;
   try{
     const today=todayS();
-    // 1. Poll current section tasks (always)
-    if(curSec&&curSec!=='captain'||isCap()){
-      const secToCheck=curSec||'';
-      if(secToCheck){
-        const raw=await fbG('/tasks/'+secToCheck+'/'+today)||{};
-        const tasks=o2a(raw).filter(t=>t.text&&t.text.trim());
-        const newFromOthers=tasks.filter(t=>!t.done&&t.authorAccId!==CU.id);
-        const hash=tasks.length+'_'+tasks.filter(t=>t.done).length;
-        if(_lastHash[secToCheck]!==undefined&&_lastHash[secToCheck]!==hash){
-          // Something changed — re-render if on today/done tab
-          if(curTab==='today'||curTab==='done')renderC();
-          updateProg();
-        }
-        // Notify about new tasks from others
-        const prev=prevCounts[secToCheck]??-1;
-        if(prev!==-1&&newFromOthers.length>prev){
-          const sec=sections.find(s=>s.id===secToCheck);
-          const sname=secToCheck==='captain'?'Капитан':(sec?.name||secToCheck);
-          showToast('🔔 Новая задача: '+sname);
-          playSound('notify');
-          sendPush('БОРТ','Новая задача в "'+sname+'"');
-        }
-        prevCounts[secToCheck]=newFromOthers.length;
-        _lastHash[secToCheck]=hash;
+    const secToCheck=curSec||'';
+
+    // 1. Poll current section today's tasks — smart diff, no full re-render
+    if(secToCheck){
+      const raw=await fbG('/tasks/'+secToCheck+'/'+today)||{};
+      const tasks=o2a(raw);
+      const cacheKey=secToCheck+'_'+today;
+      const prev=_taskCache[cacheKey]||{};
+      const curr={};tasks.forEach(t=>{curr[t.id]=t;});
+
+      // Find changes
+      const added=tasks.filter(t=>!prev[t.id]&&t.authorAccId!==CU.id);
+      const removed=Object.keys(prev).filter(id=>!curr[id]);
+      const changed=tasks.filter(t=>prev[t.id]&&JSON.stringify(prev[t.id])!==JSON.stringify(t));
+
+      _taskCache[cacheKey]=curr;
+
+      // Notifications for new tasks from others
+      const newFromOthers=added.filter(t=>!t.done&&t.text?.trim());
+      if(newFromOthers.length>0&&Object.keys(prev).length>0){
+        const sec=sections.find(s=>s.id===secToCheck);
+        const sname=secToCheck==='captain'?'Капитан':(sec?.name||secToCheck);
+        showToast('🔔 Новая задача: '+sname);
+        playSound('notify');
+        sendPush('БОРТ','Новая задача в "'+sname+'"');
       }
+
+      // Apply surgical DOM updates only on today tab
+      if(curTab==='today'&&secToCheck===curSec){
+        const area=$('carea');if(!area)return;
+        // Add new task elements from others (own tasks already added instantly)
+        added.filter(t=>!t.done&&t.text?.trim()&&t.authorAccId!==CU.id).forEach(t=>{
+          if(document.querySelector('.titem[data-tid="'+t.id+'"]'))return;
+          const addBtn=area.querySelector('.add-btn');
+          const el=mkTask(t,today);el.dataset.tid=t.id;
+          el.style.opacity='0';el.style.transition='opacity .3s';
+          if(addBtn)area.insertBefore(el,addBtn);else area.appendChild(el);
+          setTimeout(()=>el.style.opacity='1',50);
+        });
+        // Remove deleted tasks smoothly
+        removed.forEach(id=>{
+          const el=document.querySelector('.titem[data-tid="'+id+'"]');
+          if(el&&!el._removing){el._removing=true;el.style.transition='opacity .3s,max-height .3s,margin .3s';el.style.opacity='0';el.style.maxHeight=el.offsetHeight+'px';setTimeout(()=>{el.style.maxHeight='0';el.style.marginBottom='0';},50);setTimeout(()=>el.remove(),350);}
+        });
+        // Update changed tasks (e.g. needsRedo, text edit from another device)
+        changed.forEach(t=>{
+          const el=document.querySelector('.titem[data-tid="'+t.id+'"]');
+          if(t.done&&el){el._removing=true;el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),300);}
+          else if(!t.done&&!el&&t.text?.trim()){
+            // Task appeared (e.g. reverted from done)
+            const addBtn=area.querySelector('.add-btn');
+            const newEl=mkTask(t,today);newEl.dataset.tid=t.id;
+            newEl.style.opacity='0';newEl.style.transition='opacity .3s';
+            if(addBtn)area.insertBefore(newEl,addBtn);else area.appendChild(newEl);
+            setTimeout(()=>newEl.style.opacity='1',50);
+          }
+        });
+      }
+      // Update calendar dots surgically
+      if(curTab==='calendar'){
+        removed.forEach(id=>{
+          // Check if any tasks remain for that date
+          const remaining=tasks.filter(t=>t.text?.trim()&&!removed.includes(t.id));
+          if(remaining.length===0){
+            const d=new Date(today+'T00:00:00');
+            document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(d.getDate()))el.classList.remove('has-tasks');});
+          }
+        });
+      }
+      // Always update progress bar silently
+      const tt=tasks.filter(t=>t.text?.trim());
+      const pct=tt.length>0?Math.round(tt.filter(t=>t.done).length/tt.length*100):0;
+      _updateProgSilent(pct);
     }
-    // 2. Poll sections config for changes
+
+    // 2. Poll sections config
     const secsRaw=await fbG('/sections');
     const secsHash=JSON.stringify(secsRaw);
-    if(_lastSecHash&&_lastSecHash!==secsHash){
-      await loadSecs();renderSBar();
-    }
+    if(_lastSecHash&&_lastSecHash!==secsHash){await loadSecs();renderSBar();}
     _lastSecHash=secsHash;
-    // 3. Poll duty if on duty section
+
+    // 3. Duty section
     const sec=sections.find(s=>s.id===curSec);
     if(sec?.isDuty){
       const dutyRaw=await fbG('/duty')||{};
       const dutyHash=JSON.stringify(dutyRaw);
-      if(_lastDutyHash&&_lastDutyHash!==dutyHash)renderC();
+      if(_lastDutyHash&&_lastDutyHash!==dutyHash){
+        // Only update bottom section if date selected
+        if(calSel){
+          const area=$('carea');
+          const dutyEditRoles=sec?.editRoles||[];
+          const canAssign=isCap()||(dutyEditRoles.length>0&&dutyEditRoles.includes(CU?.role));
+          const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+          updateDutyBottom(calSel,dutyRaw,canAssign,area,MN);
+        }
+      }
       _lastDutyHash=dutyHash;
     }
-    // 4. Check for force-logout signal (captain reset all sessions)
+
+    // 4. Force-logout check
     if(!isCap()){
       const sys=await fbG('/system/forceLogout');
       if(sys?.at){
         const signalTime=new Date(sys.at).getTime();
-        const loginTime=CU._loginAt||0;
-        if(signalTime>loginTime){
-          showToast('Сессия сброшена капитаном. Войдите снова.');
-          setTimeout(()=>doLogout(),2000);
-        }
+        if(signalTime>(CU._loginAt||0)){showToast('Сессия сброшена. Войдите снова.');setTimeout(()=>doLogout(),2000);}
       }
     }
   }catch(e){}
+}
+
+function _updateProgSilent(pct){
+  if(curSec==='captain'){
+    const f=$('cap-fill'),p=$('cap-pct');
+    if(f)f.style.width=pct+'%';if(p)p.textContent=pct+'%';
+    if(pct===100&&!victorySeen){victorySeen=true;setTimeout(()=>$('victory-overlay')?.classList.add('show'),800);}
+    else if(pct<100)victorySeen=false;
+  } else {
+    const f=$('crew-fill'),p=$('crew-pct');
+    if(f)f.style.width=pct+'%';if(p)p.textContent=pct+'%';
+    if(pct===100&&!crewVictorySeen[curSec]){crewVictorySeen[curSec]=true;setTimeout(()=>$('crew-victory')?.classList.add('show'),800);}
+    else if(pct<100)crewVictorySeen[curSec]=false;
+  }
 }
 
 // ═══ SECTIONS BAR ════════════════════════════════════════════════
@@ -625,7 +695,10 @@ function renderC(){
 
 // ═══ DAY TASKS ════════════════════════════════════════════════════
 async function renderDay(area,date){
-  area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
+  // Only show loading on first render (area empty)
+  if(!area.querySelector('.dh')){
+    area.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px">Загрузка...</div>';
+  }
   const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
   const tasks=o2a(raw).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
   area.innerHTML='';
@@ -633,7 +706,7 @@ async function renderDay(area,date){
   const DAYS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
   const MONS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   const dh=mk('div','dh');dh.innerHTML=`<div class="db">${DAYS[d.getDay()]}</div><div class="ds">${d.getDate()} ${MONS[d.getMonth()]} ${d.getFullYear()}</div>`;area.appendChild(dh);
-  tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTask(task,date)));
+  tasks.filter(t=>!t.done).forEach(task=>{const el=mkTask(task,date);area.appendChild(el);});
   const sec=sections.find(s=>s.id===curSec);
   const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
   if(ce){
@@ -702,6 +775,7 @@ function mkTask(task,date){
   const canSwipeComplete=curSec==='captain'?isCap():(sec?canEdit(sec):false);
   const canDelete=isCap()||task.authorAccId===CU?.id;
   const item=mk('div','titem');
+  item.dataset.tid=task.id; // key for surgical DOM updates
   // Right swipe = complete (green)
   const sbgR=mk('div','tswbg-r');sbgR.innerHTML='<span style="font-size:20px;color:#fff">✓</span>';item.appendChild(sbgR);
   // Left swipe = delete (red)
@@ -747,7 +821,15 @@ function mkTask(task,date){
     playSound('trash');
     await fbD('/tasks/'+curSec+'/'+date+'/'+task.id);
     showToast('🗑 Удалено');
-    // Item already flew off screen via swipe animation, no re-render needed
+    // Update task cache so polling knows this is already removed
+    const cacheKey=curSec+'_'+date;
+    if(_taskCache[cacheKey])delete _taskCache[cacheKey][task.id];
+    // Update calendar dot: check if any tasks remain for this date
+    const remaining=Object.values(_taskCache[cacheKey]||{}).filter(t=>t.text?.trim());
+    if(remaining.length===0){
+      const dayNum=new Date(date+'T00:00:00').getDate();
+      document.querySelectorAll('.cal-day').forEach(el=>{if(el.textContent==String(dayNum))el.classList.remove('has-tasks');});
+    }
   }:null;
 
   setupSwipeTask(item,cont,sbgR,sbgL,completeCb,deleteCb);
@@ -922,15 +1004,14 @@ async function renderCalendar(area){
 }
 async function renderCalendarDay(date){
   const area=$('carea');
-  // Remove everything after the cal-wrap (calendar grid container)
   const calWrap=area.querySelector('.cal-wrap');
   if(calWrap){
-    while(calWrap.nextSibling)calWrap.nextSibling.remove();
+    // Smoothly fade out old content below grid
+    let next=calWrap.nextSibling;
+    while(next){const tmp=next.nextSibling;next.remove();next=tmp;}
   }
   const sep=mk('div','secsep');area.appendChild(sep);
   await renderDayInline(area,date);
-  // Scroll to show the day content
-  setTimeout(()=>{sep.scrollIntoView({behavior:'smooth',block:'start'});},100);
 }
 async function renderDayInline(area,date){
   const raw=await fbG('/tasks/'+curSec+'/'+date)||{};
@@ -939,7 +1020,7 @@ async function renderDayInline(area,date){
   const DAYS=['ВОСКРЕСЕНЬЕ','ПОНЕДЕЛЬНИК','ВТОРНИК','СРЕДА','ЧЕТВЕРГ','ПЯТНИЦА','СУББОТА'];
   const MONS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   const dh=mk('div','dh');dh.innerHTML=`<div class="db">${DAYS[d.getDay()]}</div><div class="ds">${d.getDate()} ${MONS[d.getMonth()]} ${d.getFullYear()}</div>`;area.appendChild(dh);
-  tasks.filter(t=>!t.done).forEach(task=>area.appendChild(mkTask(task,date)));
+  tasks.filter(t=>!t.done).forEach(task=>{const el=mkTask(task,date);area.appendChild(el);});
   const sec=sections.find(s=>s.id===curSec);const ce=curSec==='captain'?isCap():(sec?canEdit(sec):false);
   if(ce){
     const ab=mk('div','add-btn');ab.innerHTML='<span style="font-size:20px;line-height:1">+</span><span>Добавить задачу</span>';
